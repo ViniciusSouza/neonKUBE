@@ -192,7 +192,7 @@ namespace TestCadence
 
             for (int i = 0; i < testDomainCount; i++)
             {
-                await client.RegisterDomainAsync($"my-domain-{i}", $"This is my-domain-{i}", $"jeff-{i}@lilltek.com", retentionDays: 7 + i);
+                await client.RegisterDomainAsync($"my-domain-{i}", $"This is my-domain-{i}", $"jeff-{i}@lilltek.com", retentionDays: Math.Min(20, 7 + i));
             }
 
             // List all of the domains in one page.
@@ -228,7 +228,7 @@ namespace TestCadence
                 Assert.Equal($"This is my-domain-{id}", domain.DomainInfo.Description);
                 Assert.Equal($"jeff-{id}@lilltek.com", domain.DomainInfo.OwnerEmail);
                 Assert.Equal(DomainStatus.Registered, domain.DomainInfo.Status);
-                Assert.Equal(7 + id, domain.Configuration.RetentionDays);
+                Assert.Equal(Math.Min(20, 7 + id), domain.Configuration.RetentionDays);
             }
 
             // List all of the domains, one to each page of results.
