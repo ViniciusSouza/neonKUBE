@@ -855,10 +855,9 @@ namespace Neon.Net
                 .FirstOrDefault(
                     netInterface =>
                     {
-                        // Filter out loopback interfaces, Hyper-V virtual switches and interfaces that aren't up.
+                        // Filter out loopback interfaces and interfaces that aren't up.
 
                         if (netInterface.NetworkInterfaceType == NetworkInterfaceType.Loopback || 
-                            netInterface.Description.Contains("Hyper-V") ||
                             netInterface.OperationalStatus != OperationalStatus.Up)
                         {
                             return false;
