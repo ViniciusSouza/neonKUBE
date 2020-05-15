@@ -91,7 +91,7 @@ namespace TestCadence
 
             // Verify that default Cadence settings reject duplicate workflow IDs.
 
-            Assert.Equal(WorkflowIdReusePolicy.AllowDuplicateFailedOnly, fixture.Settings.WorkflowIdReusePolicy);
+            Assert.Equal(WorkflowIdReusePolicy.AllowDuplicate, fixture.Settings.WorkflowIdReusePolicy);
 
             using (var client = await CadenceClient.ConnectAsync(fixture.Settings))
             {
