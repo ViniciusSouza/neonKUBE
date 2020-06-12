@@ -45,5 +45,5 @@ Exec { docker build -t "${registry}:$tag" --build-arg "APPNAME=$appname" . }
 
 # Clean up
 
-DeleteFolder bin
-DeleteFolder _common
+# DeleteFolder bin
+# DeleteFolder _common

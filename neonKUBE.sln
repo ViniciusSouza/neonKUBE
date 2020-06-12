@@ -65,6 +65,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "neon-cli", "Tools\neon-cli\
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Images", "Images\Images.csproj", "{78A69CC0-1CA5-4D1A-889F-765212271A9A}"
+	ProjectSection(ProjectDependencies) = postProject
+		{BE43C827-D1DF-4F95-98BE-98B315D12583} = {BE43C827-D1DF-4F95-98BE-98B315D12583}
+		{75ED3E48-DFC6-481B-8168-A184DDD19FFB} = {75ED3E48-DFC6-481B-8168-A184DDD19FFB}
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "External", "External", "{1A3C35E5-1C30-44F2-AB46-F5E7F99E524C}"
 	ProjectSection(SolutionItems) = preProject

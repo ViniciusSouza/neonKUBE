@@ -4369,14 +4369,12 @@ namespace TestCadence
             // and register its workflows and activities.  We'll remove any existing container
             // first and then remove the container after we're done.
 
-            var testCadenceImage = $"{KubeConst.NeonBranchRegistry}/test-cadence:latest";
+            var testCadenceImage = $"{KubeConst.NeonBranchRegistry}/test-cadence:release-1.3.0-latest";
 
-            // $debug(jefflill): 
-            //
-            // It might be useful to uncomment/modify this line while
-            // debugging changes to the [test-cadence] Docker image.
+            // We need to run the container in a different task list to avoid conflicts
+            // with the local worker started by the test suite.
 
-            // testCadenceImage = "nkubedev/test-cadence:cadence-latest";
+            var taskList = CadenceTestHelper.TaskList + "-test-cadence";
 
             NeonHelper.Execute("docker.exe",
                 new object[]
@@ -4408,7 +4406,7 @@ namespace TestCadence
                     "--name", "test-cadence",
                     "--env", $"CADENCE_SERVERS=cadence://{ipAddress}:7933",
                     "--env", $"CADENCE_DOMAIN={CadenceFixture.DefaultDomain}",
-                    "--env", $"CADENCE_TASKLIST={CadenceTestHelper.TaskList}",
+                    "--env", $"CADENCE_TASKLIST={taskList}",
                     testCadenceImage
                 });
 
@@ -4434,7 +4432,7 @@ namespace TestCadence
                         new WorkflowOptions()
                         {
                             WorkflowId = $"busywork-{Guid.NewGuid().ToString("d")}",
-                            TaskList   = CadenceTestHelper.TaskList
+                            TaskList   = taskList
                         });
 
                     pending.Add(stub.DoItAsync(workflowIterations, sleepTime, $"workflow-{i}"));
