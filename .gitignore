@@ -116,3 +116,4 @@ Go/**/test/logs/**
 
 # OS/X related files
 .DS_Store
+/Lib/Neon.Temporal/Resources
