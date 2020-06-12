@@ -62,11 +62,13 @@ function Build
 
 	if ($latest)
 	{
-		if (TagAsLatest)
-		{
-			Exec { docker tag "${registry}:$tag" "${registry}:latest" }
-			PushImage "${registry}:latest"
-		}
+		# Neon v1.x is deprecated so we will no longer tag these images as [latest].
+		#
+		# if (TagAsLatest)
+		# {
+		# 	Exec { docker tag "${registry}:$tag" "${registry}:latest" }
+		# 	PushImage "${registry}:latest"
+		# }
 
         Exec { docker tag "${registry}:$tag" "${registry}:${branch}-latest" }
 		PushImage "${registry}:${branch}-latest"
