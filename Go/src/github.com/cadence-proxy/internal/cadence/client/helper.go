@@ -19,11 +19,11 @@ package proxyclient
 
 import (
 	"context"
-	"errors"
 	"strings"
 	"sync"
 	"time"
 
+	"go.uber.org/cadence"
 	"go.uber.org/cadence/.gen/go/cadence/workflowserviceclient"
 	cadenceshared "go.uber.org/cadence/.gen/go/shared"
 	"go.uber.org/cadence/client"
@@ -775,10 +775,12 @@ func (helper *ClientHelper) CompleteActivity(
 	result interface{},
 	cadenceError *proxyerror.CadenceError,
 ) error {
-	var e error
+	message := ""
 	if cadenceError != nil {
-		e = errors.New(cadenceError.ToString())
+		message = cadenceError.Error()
 	}
+
+	e := cadence.NewCustomError(message)
 
 	// query the workflow
 	workflowClient := helper.GetOrCreateWorkflowClient(domain)
@@ -815,10 +817,12 @@ func (helper *ClientHelper) CompleteActivityByID(
 	result interface{},
 	cadenceError *proxyerror.CadenceError,
 ) error {
-	var e error
+	message := ""
 	if cadenceError != nil {
-		e = errors.New(cadenceError.ToString())
+		message = cadenceError.Error()
 	}
+
+	e := cadence.NewCustomError(message)
 
 	// query the workflow
 	workflowClient := helper.GetOrCreateWorkflowClient(domain)

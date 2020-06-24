@@ -42,8 +42,8 @@ var (
 
 	// DebugPrelaunched INTERNAL USE ONLY: Optionally indicates that the cadence-proxy will
 	// already be running for debugging purposes.  When this is true, the
-	// cadence-client be hardcoded to listen on 127.0.0.2:5001 and
-	// the cadence-proxy will be assumed to be listening on 127.0.0.2:5000.
+	// cadence-client be hardcoded to listen on 127.0.0.1:5001 and
+	// the cadence-proxy will be assumed to be listening on 127.0.0.1:5000.
 	// This defaults to false.
 	DebugPrelaunched = false
 

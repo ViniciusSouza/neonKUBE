@@ -136,9 +136,10 @@ func (c *CadenceError) SetType(errorType CadenceErrorType) {
 	c.Type = &typeString
 }
 
-// ToString returns the string representation of a CadenceError
-//
-// returns string -> a CadenceError as a string (CadenceError.String field)
-func (c *CadenceError) ToString() string {
+func (c *CadenceError) Error() string {
 	return *c.String
 }
+
+// func (c *CadenceError) ToError() error {
+
+// }
