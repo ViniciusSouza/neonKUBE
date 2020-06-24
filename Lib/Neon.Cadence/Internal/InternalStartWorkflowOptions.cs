@@ -49,7 +49,6 @@ namespace Neon.Cadence.Internal
         /// Optional: defaulted to a uuid.
         /// </summary>
         [JsonProperty(PropertyName = "ID", DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
-        [DefaultValue(null)]
         public string ID { get; set; } = null;
 
         /// <summary>
@@ -73,7 +72,6 @@ namespace Neon.Cadence.Internal
         /// Expressed as nanoseconds.  Optional: defaulted to 10 secs.
         /// </summary>
         [JsonProperty(PropertyName = "DecisionTaskStartToCloseTimeout", DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
-        [DefaultValue(10 * CadenceHelper.NanosecondsPerSecond)]
         public long DecisionTaskStartToCloseTimeout { get; set; } = 10 * CadenceHelper.NanosecondsPerSecond;
 
         /// <summary>
@@ -82,7 +80,6 @@ namespace Neon.Cadence.Internal
         /// Optional: defaulted to WorkflowIDReusePolicyAllowDuplicate.
         /// </summary>
         [JsonProperty(PropertyName = "WorkflowIdReusePolicy", DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
-        [DefaultValue(Cadence.WorkflowIdReusePolicy.AllowDuplicate)]
         public int WorkflowIdReusePolicy { get; set; } = (int)Cadence.WorkflowIdReusePolicy.AllowDuplicate;
         
         /// <summary>
@@ -90,7 +87,6 @@ namespace Neon.Cadence.Internal
         /// server will start new workflow execution if needed based on the retry policy.
         /// </summary>
         [JsonProperty(PropertyName = "RetryPolicy", DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
-        [DefaultValue(null)]
         public InternalRetryPolicy RetryPolicy { get; set; } = null;
 
         /// <summary>
@@ -115,14 +111,12 @@ namespace Neon.Cadence.Internal
         /// </code>
         /// </summary>
         [JsonProperty(PropertyName = "CronSchedule", DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
-        [DefaultValue(null)]
         public string CronSchedule { get; set; } = null;
 
         /// <summary>
         /// Memo - Optional info that will be shown in list workflow.
         /// </summary>
         [JsonProperty(PropertyName = "Memo", DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
-        [DefaultValue(null)]
         public Dictionary<string, byte[]> Memo = null;
     }
 }

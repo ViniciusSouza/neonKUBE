@@ -49,14 +49,13 @@ namespace Neon.Cadence.Internal
         /// Optional: the current workflow (parent)'s domain will be used if this is not provided.
         /// </summary>
         [JsonProperty(PropertyName = "Domain", DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
-        [DefaultValue(null)]
         public string Domain { get; set; } = null;
 
         /// <summary>
         /// WorkflowID of the child workflow to be scheduled.
-        /// Optional: an auto generated workflowID will be used if this is not provided.        /// </summary>
+        /// Optional: an auto generated workflowID will be used if this is not provided.        
+        /// </summary>
         [JsonProperty(PropertyName = "WorkflowID", DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
-        [DefaultValue(null)]
         public string WorkflowID { get; set; } = null;
 
         /// <summary>
@@ -64,8 +63,7 @@ namespace Neon.Cadence.Internal
         /// Optional: the parent workflow task list will be used if this is not provided.
         /// </summary>
         [JsonProperty(PropertyName = "TaskList", DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
-        [DefaultValue("")]
-        public string TaskList { get; set; }
+        public string TaskList { get; set; } = "";
 
         /// <summary>
         /// ExecutionStartToCloseTimeout - The end to end timeout for the child workflow execution.
@@ -79,7 +77,6 @@ namespace Neon.Cadence.Internal
         /// Optional: default is 10s if this is not provided (or if 0 is provided).
         /// </summary>
         [JsonProperty(PropertyName = "TaskStartToCloseTimeout", DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
-        [DefaultValue(10 * CadenceHelper.NanosecondsPerSecond)]
         public long TaskStartToCloseTimeout { get; set; } = 10 * CadenceHelper.NanosecondsPerSecond;
 
         /// <summary>
@@ -87,7 +84,6 @@ namespace Neon.Cadence.Internal
         /// Optional: default to use ChildWorkflowPolicyAbandon. We currently only support this policy.
         /// </summary>
         [JsonProperty(PropertyName = "ChildPolicy", DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
-        [DefaultValue((int)Cadence.ParentClosePolicy.Abandon)]
         public int ChildClosePolicy { get; set; } = (int)Cadence.ParentClosePolicy.Abandon;
 
         /// <summary>
@@ -96,7 +92,6 @@ namespace Neon.Cadence.Internal
         /// Optional: default false
         /// </summary>
         [JsonProperty(PropertyName = "WaitForCancellation", DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
-        [DefaultValue(false)]
         public bool WaitForCancellation { get; set; } = false;
 
         /// <summary>
@@ -105,7 +100,6 @@ namespace Neon.Cadence.Internal
         /// Optional: defaulted to WorkflowIDReusePolicyAllowDuplicate.
         /// </summary>
         [JsonProperty(PropertyName = "WorkflowIdReusePolicy", DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
-        [DefaultValue(Cadence.WorkflowIdReusePolicy.AllowDuplicate)]
         public int WorkflowIdReusePolicy { get; set; } = (int)Cadence.WorkflowIdReusePolicy.AllowDuplicate;
 
         /// <summary>
@@ -113,7 +107,6 @@ namespace Neon.Cadence.Internal
         /// server will start new workflow execution if needed based on the retry policy.
         /// </summary>
         [JsonProperty(PropertyName = "RetryPolicy", DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
-        [DefaultValue(null)]
         public InternalRetryPolicy RetryPolicy { get; set; } = null;
 
         /// <summary>
@@ -138,7 +131,6 @@ namespace Neon.Cadence.Internal
         /// </code>
         /// </summary>
         [JsonProperty(PropertyName = "CronSchedule", DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
-        [DefaultValue(null)]
         public string CronSchedule { get; set; } = null;
     }
 }
