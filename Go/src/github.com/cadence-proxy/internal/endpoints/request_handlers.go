@@ -2146,10 +2146,6 @@ func handleActivityExecuteRequest(requestCtx context.Context, request *messages.
 	ctx = workflow.WithWorkflowDomain(ctx, *request.GetDomain())
 	future := workflow.ExecuteActivity(ctx, activityName, request.GetArgs())
 
-	// Send ACK: Commented out because its no longer needed.
-	// op := sendFutureACK(contextID, requestID, clientID)
-	// <-op.GetChannel()
-
 	// execute the activity
 	var result []byte
 	if err := future.Get(ctx, &result); err != nil {

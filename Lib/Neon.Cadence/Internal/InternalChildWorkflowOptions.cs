@@ -48,21 +48,21 @@ namespace Neon.Cadence.Internal
         /// Domain of the child workflow.
         /// Optional: the current workflow (parent)'s domain will be used if this is not provided.
         /// </summary>
-        [JsonProperty(PropertyName = "Domain", DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
+        [JsonProperty(PropertyName = "Domain")]
         public string Domain { get; set; } = null;
 
         /// <summary>
         /// WorkflowID of the child workflow to be scheduled.
         /// Optional: an auto generated workflowID will be used if this is not provided.        
         /// </summary>
-        [JsonProperty(PropertyName = "WorkflowID", DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
+        [JsonProperty(PropertyName = "WorkflowID")]
         public string WorkflowID { get; set; } = null;
 
         /// <summary>
         /// TaskList that the child workflow needs to be scheduled on.
         /// Optional: the parent workflow task list will be used if this is not provided.
         /// </summary>
-        [JsonProperty(PropertyName = "TaskList", DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
+        [JsonProperty(PropertyName = "TaskList")]
         public string TaskList { get; set; } = "";
 
         /// <summary>
@@ -76,14 +76,14 @@ namespace Neon.Cadence.Internal
         /// TaskStartToCloseTimeout - The decision task timeout for the child workflow.
         /// Optional: default is 10s if this is not provided (or if 0 is provided).
         /// </summary>
-        [JsonProperty(PropertyName = "TaskStartToCloseTimeout", DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
+        [JsonProperty(PropertyName = "TaskStartToCloseTimeout")]
         public long TaskStartToCloseTimeout { get; set; } = 10 * CadenceHelper.NanosecondsPerSecond;
 
         /// <summary>
         /// ChildPolicy defines the behavior of child workflow when parent workflow is terminated.
         /// Optional: default to use ChildWorkflowPolicyAbandon. We currently only support this policy.
         /// </summary>
-        [JsonProperty(PropertyName = "ChildPolicy", DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
+        [JsonProperty(PropertyName = "ChildPolicy")]
         public int ChildClosePolicy { get; set; } = (int)Cadence.ParentClosePolicy.Abandon;
 
         /// <summary>
@@ -91,7 +91,7 @@ namespace Neon.Cadence.Internal
         /// as: completed/failed/timedout/terminated/canceled)
         /// Optional: default false
         /// </summary>
-        [JsonProperty(PropertyName = "WaitForCancellation", DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
+        [JsonProperty(PropertyName = "WaitForCancellation")]
         public bool WaitForCancellation { get; set; } = false;
 
         /// <summary>
@@ -99,14 +99,14 @@ namespace Neon.Cadence.Internal
         /// for dedup logic if set to WorkflowIdReusePolicyRejectDuplicate
         /// Optional: defaulted to WorkflowIDReusePolicyAllowDuplicate.
         /// </summary>
-        [JsonProperty(PropertyName = "WorkflowIdReusePolicy", DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
+        [JsonProperty(PropertyName = "WorkflowIdReusePolicy")]
         public int WorkflowIdReusePolicy { get; set; } = (int)Cadence.WorkflowIdReusePolicy.AllowDuplicate;
 
         /// <summary>
         /// RetryPolicy - Optional retry policy for workflow. If a retry policy is specified, in case of workflow failure
         /// server will start new workflow execution if needed based on the retry policy.
         /// </summary>
-        [JsonProperty(PropertyName = "RetryPolicy", DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
+        [JsonProperty(PropertyName = "RetryPolicy")]
         public InternalRetryPolicy RetryPolicy { get; set; } = null;
 
         /// <summary>
@@ -130,7 +130,7 @@ namespace Neon.Cadence.Internal
         /// * * * * *
         /// </code>
         /// </summary>
-        [JsonProperty(PropertyName = "CronSchedule", DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
+        [JsonProperty(PropertyName = "CronSchedule")]
         public string CronSchedule { get; set; } = null;
     }
 }

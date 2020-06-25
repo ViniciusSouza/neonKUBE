@@ -19,6 +19,7 @@ package proxyclient
 
 import (
 	"context"
+	"reflect"
 	"strings"
 	"sync"
 	"time"
@@ -32,8 +33,6 @@ import (
 	"go.uber.org/cadence/workflow"
 	"go.uber.org/yarpc"
 	"go.uber.org/zap"
-
-	proxyerror "github.com/cadence-proxy/internal/cadence/error"
 )
 
 const (
@@ -773,18 +772,16 @@ func (helper *ClientHelper) CompleteActivity(
 	taskToken []byte,
 	domain string,
 	result interface{},
-	cadenceError *proxyerror.CadenceError,
+	completionErr error,
 ) error {
-	message := ""
-	if cadenceError != nil {
-		message = cadenceError.Error()
+	var cadenceError error
+	if completionErr != nil && !reflect.ValueOf(completionErr).IsNil() {
+		cadenceError = cadence.NewCustomError(completionErr.Error())
 	}
-
-	e := cadence.NewCustomError(message)
 
 	// query the workflow
 	workflowClient := helper.GetOrCreateWorkflowClient(domain)
-	err := workflowClient.CompleteActivity(ctx, taskToken, result, e)
+	err := workflowClient.CompleteActivity(ctx, taskToken, result, cadenceError)
 	if err != nil {
 		helper.Logger.Error("failed to complete activity", zap.Error(err))
 		return err
@@ -792,7 +789,7 @@ func (helper *ClientHelper) CompleteActivity(
 
 	helper.Logger.Info("Successfully Completed Activity",
 		zap.Any("Result", result),
-		zap.Error(e))
+		zap.Error(cadenceError))
 
 	return nil
 }
@@ -815,14 +812,12 @@ func (helper *ClientHelper) CompleteActivityByID(
 	runID string,
 	activityID string,
 	result interface{},
-	cadenceError *proxyerror.CadenceError,
+	completionErr error,
 ) error {
-	message := ""
-	if cadenceError != nil {
-		message = cadenceError.Error()
+	var cadenceError error
+	if completionErr != nil && !reflect.ValueOf(completionErr).IsNil() {
+		cadenceError = cadence.NewCustomError(completionErr.Error())
 	}
-
-	e := cadence.NewCustomError(message)
 
 	// query the workflow
 	workflowClient := helper.GetOrCreateWorkflowClient(domain)
@@ -833,7 +828,7 @@ func (helper *ClientHelper) CompleteActivityByID(
 		runID,
 		activityID,
 		result,
-		e)
+		cadenceError)
 
 	if err != nil {
 		helper.Logger.Error("failed to complete activity", zap.Error(err))
@@ -843,7 +838,7 @@ func (helper *ClientHelper) CompleteActivityByID(
 	helper.Logger.Info("Successfully Completed Activity",
 		zap.String("ActivityId", activityID),
 		zap.Any("Result", result),
-		zap.Error(e))
+		zap.Error(cadenceError))
 
 	return nil
 }

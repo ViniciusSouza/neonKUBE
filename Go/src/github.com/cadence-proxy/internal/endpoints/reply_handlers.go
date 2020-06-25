@@ -181,6 +181,7 @@ func handleActivityInvokeReply(reply *messages.ActivityInvokeReply, op *Operatio
 
 	// check if the activity is to be
 	// completed externally
+
 	var result interface{}
 	if reply.GetPending() {
 		result = activity.ErrResultPending
