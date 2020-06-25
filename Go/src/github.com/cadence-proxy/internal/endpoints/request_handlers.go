@@ -205,7 +205,7 @@ func handleInitializeRequest(requestCtx context.Context, request *messages.Initi
 
 	// set the reply address
 	if internal.DebugPrelaunched {
-		replyAddress = "http://127.0.0.2:5001/"
+		replyAddress = "http://127.0.0.1:5001/"
 	} else {
 		address := *request.GetLibraryAddress()
 		port := request.GetLibraryPort()
@@ -906,7 +906,7 @@ func handleWorkflowMutableRequest(requestCtx context.Context, request *messages.
 		if v, ok := a.(*proxyerror.CadenceError); ok {
 			if _v, _ok := b.(*proxyerror.CadenceError); _ok {
 				if v.GetType() == _v.GetType() &&
-					v.ToString() == _v.ToString() {
+					v.Error() == _v.Error() {
 					return true
 				}
 				return false
@@ -2145,10 +2145,6 @@ func handleActivityExecuteRequest(requestCtx context.Context, request *messages.
 	ctx := workflow.WithActivityOptions(wectx.GetContext(), opts)
 	ctx = workflow.WithWorkflowDomain(ctx, *request.GetDomain())
 	future := workflow.ExecuteActivity(ctx, activityName, request.GetArgs())
-
-	// Send ACK: Commented out because its no longer needed.
-	// op := sendFutureACK(contextID, requestID, clientID)
-	// <-op.GetChannel()
 
 	// execute the activity
 	var result []byte

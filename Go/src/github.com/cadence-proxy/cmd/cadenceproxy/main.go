@@ -39,8 +39,8 @@ var (
 
 	// debugPrelaunched INTERNAL USE ONLY: Optionally indicates that the cadence-proxy will
 	// already be running for debugging purposes.  When this is true, the
-	// cadence-client be hardcoded to listen on 127.0.0.2:5001 and
-	// the cadence-proxy will be assumed to be listening on 127.0.0.2:5000.
+	// cadence-client be hardcoded to listen on 127.0.0.1:5001 and
+	// the cadence-proxy will be assumed to be listening on 127.0.0.1:5000.
 	// This defaults to false.
 	debugPrelaunched = false
 )
@@ -48,7 +48,7 @@ var (
 func main() {
 
 	// define the flags and parse them
-	flag.StringVar(&address, "listen", "127.0.0.2:5000", "Address for the Cadence Proxy Server to listen on.")
+	flag.StringVar(&address, "listen", "127.0.0.1:5000", "Address for the Cadence Proxy Server to listen on.")
 	flag.BoolVar(&debugMode, "debug", true, "Set to debug mode.")
 	flag.Int64Var(&clientID, "client-id", 1, "Set clientID used for the custom logger.")
 	flag.Parse()
