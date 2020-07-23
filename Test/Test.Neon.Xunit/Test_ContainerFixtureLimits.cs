@@ -1,5 +1,5 @@
 ﻿//-----------------------------------------------------------------------------
-// FILE:	    Test_ContainerFixture.cs
+// FILE:	    Test_ContainerFixtureLimits.cs
 // CONTRIBUTOR: Jeff Lill
 // COPYRIGHT:	Copyright (c) 2005-2020 by neonFORGE, LLC.  All rights reserved.
 //
@@ -32,22 +32,32 @@ using Xunit;
 
 namespace TestXunit
 {
-    public class Test_ContainerFixture : IClassFixture<ContainerFixture>
+    public class Test_ContainerFixtureLimits : IClassFixture<ContainerFixture>
     {
         private ContainerFixture fixture;
 
-        public Test_ContainerFixture(ContainerFixture fixture)
+        public Test_ContainerFixtureLimits(ContainerFixture fixture)
         {
             this.fixture = fixture;
 
-            fixture.Start("my-container", $"{KubeConst.NeonBranchRegistry}/test:latest");
+            var limits = new ContainerLimits()
+            {
+                Memory            = "50MiB",
+                MemoryReservation = "40MiB",
+                MemorySwap        = "100MiB",
+                MemorySwappiness  = 50,
+                KernelMemory      = "4MiB",
+                OomKillDisable    = true
+            };
+
+            fixture.Start("my-container", $"{KubeConst.NeonBranchRegistry}/test:latest", limits: limits);
         }
 
         [Fact]
         [Trait(TestCategory.CategoryTrait, TestCategory.NeonCommon)]
         public void Basic()
         {
-            // Verify that we can start a simple container with defaults.
+            // Verify that we can start a simple container with resource limits.
 
             var result = NeonHelper.ExecuteCapture("docker.exe", "ps");
 

@@ -111,10 +111,9 @@ namespace Neon.Xunit.Cadence
         /// put the Cadence client library into its initial state before the fixture starts as well
         /// as when the fixture itself is reset.
         /// </param>
-        /// <param name="emulateProxy">
-        /// <b>INTERNAL USE ONLY:</b> Optionally starts a partially functional integrated 
-        /// <b>cadence-proxy</b> for low-level testing.  Most users should never enable this
-        /// because it's probably not going to do what you expect.
+        /// <param name="limits">
+        /// Specifies the Docker container limits to use for hosting Couchbase.  Note that
+        /// this method will use reasonably small default limits when this is <c>null</c>.
         /// </param>
         /// <returns>
         /// <see cref="TestFixtureStatus.Started"/> if the fixture wasn't previously started and
@@ -135,18 +134,18 @@ namespace Neon.Xunit.Cadence
         /// </note>
         /// </remarks>
         public TestFixtureStatus Start(
-            CadenceSettings     settings        = null,
-            string              image           = "nkubeio/cadence-dev:latest",
-            string              name            = "cadence-dev",
-            string[]            env             = null,
-            string              defaultDomain   = DefaultDomain,
-            LogLevel            logLevel        = LogLevel.None,
-            bool                keepConnection  = false,
-            bool                keepOpen        = false,
-            string              hostInterface   = null,
-            bool                noClient        = false,
-            bool                noReset         = false,
-            bool                emulateProxy    = false)
+            CadenceSettings     settings       = null,
+            string              image          = "nkubeio/cadence-dev:latest",
+            string              name           = "cadence-dev",
+            string[]            env            = null,
+            string              defaultDomain  = DefaultDomain,
+            LogLevel            logLevel       = LogLevel.None,
+            bool                keepConnection = false,
+            bool                keepOpen       = false,
+            string              hostInterface  = null,
+            bool                noClient       = false,
+            bool                noReset        = false,
+            ContainerLimits     limits         = null)
         {
             Covenant.Requires<ArgumentNullException>(!string.IsNullOrEmpty(image), nameof(image));
 
@@ -162,9 +161,10 @@ namespace Neon.Xunit.Cadence
                         logLevel:        logLevel,
                         keepConnection:  keepConnection,
                         keepOpen:        keepOpen, 
+                        hostInterface:   hostInterface,
                         noClient:        noClient, 
                         noReset:         noReset,
-                        emulateProxy:    emulateProxy);
+                        limits:          limits);
                 });
         }
 
@@ -199,10 +199,9 @@ namespace Neon.Xunit.Cadence
         /// put the Cadence client library into its initial state before the fixture starts as well
         /// as when the fixture itself is reset.
         /// </param>
-        /// <param name="emulateProxy">
-        /// <b>INTERNAL USE ONLY:</b> Optionally starts a partially functional integrated 
-        /// <b>cadence-proxy</b> for low-level testing.  Most users should never enable this
-        /// because it's probably not going to do what you expect.
+        /// <param name="limits">
+        /// Specifies the Docker container limits to use for hosting Couchbase.  Note that
+        /// this method will use reasonably small default limits when this is <c>null</c>.
         /// </param>
         /// <remarks>
         /// <note>
@@ -212,18 +211,18 @@ namespace Neon.Xunit.Cadence
         /// </note>
         /// </remarks>
         public void StartAsComposed(
-            CadenceSettings     settings        = null,
-            string              image           = "nkubeio/cadence-dev:latest",
-            string              name            = "cadence-dev",
-            string[]            env             = null,
-            string              defaultDomain   = DefaultDomain,
-            LogLevel            logLevel        = LogLevel.None,
-            bool                keepConnection  = false,
-            bool                keepOpen        = false,
-            string              hostInterface   = null,
-            bool                noClient        = false,
-            bool                noReset         = false,
-            bool                emulateProxy    = false)
+            CadenceSettings     settings       = null,
+            string              image          = "nkubeio/cadence-dev:latest",
+            string              name           = "cadence-dev",
+            string[]            env            = null,
+            string              defaultDomain  = DefaultDomain,
+            LogLevel            logLevel       = LogLevel.None,
+            bool                keepConnection = false,
+            bool                keepOpen       = false,
+            string              hostInterface  = null,
+            bool                noClient       = false,
+            bool                noReset        = false,
+            ContainerLimits     limits         = null)
         {
             Covenant.Requires<ArgumentNullException>(!string.IsNullOrEmpty(image), nameof(image));
 
@@ -249,6 +248,13 @@ namespace Neon.Xunit.Cadence
                     CadenceClient.Reset();
                 }
 
+                // Use reasonable default limits.
+
+                limits = limits ?? new ContainerLimits()
+                {
+                    Memory = "1 GiB"
+                };
+
                 // Start the Cadence container.
 
                 base.StartAsComposed(name, image,
@@ -259,6 +265,7 @@ namespace Neon.Xunit.Cadence
                         "-p", $"{GetHostInterface(hostInterface)}:8088:8088"
                     },
                     env: env,
+                    limits: limits,
                     keepOpen: keepOpen);
 
                 Thread.Sleep(warmupDelay);
