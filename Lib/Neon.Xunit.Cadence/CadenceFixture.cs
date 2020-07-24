@@ -112,7 +112,7 @@ namespace Neon.Xunit.Cadence
         /// as when the fixture itself is reset.
         /// </param>
         /// <param name="limits">
-        /// Specifies the Docker container limits to use for hosting Couchbase.  Note that
+        /// Optionally specifies the Docker container limits to use for hosting Couchbase.  Note that
         /// this method will use reasonably small default limits when this is <c>null</c>.
         /// </param>
         /// <returns>
@@ -200,7 +200,7 @@ namespace Neon.Xunit.Cadence
         /// as when the fixture itself is reset.
         /// </param>
         /// <param name="limits">
-        /// Specifies the Docker container limits to use for hosting Couchbase.  Note that
+        /// Optionally specifies the Docker container limits to use for hosting Couchbase.  Note that
         /// this method will use reasonably small default limits when this is <c>null</c>.
         /// </param>
         /// <remarks>
