@@ -73,7 +73,7 @@ namespace Neon.Xunit
         /// </para>
         /// <note>
         /// Fixtures implemented by neonFORGE that are derived from <see cref="ContainerFixture"/> 
-        /// all implement tis behavior.  If you implement your own derived fixtures,
+        /// all implement this behavior.  If you implement your own derived fixtures,
         /// you should consider implementing this as well for consistency.
         /// </note>
         /// </remarks>
@@ -135,7 +135,7 @@ namespace Neon.Xunit
         private IEnumerable<string>     env;
         private bool                    noRemove;
         private bool                    keepOpen;
-        private ContainerLimits          limits;
+        private ContainerLimits         limits;
 
         /// <summary>
         /// Constructor.
