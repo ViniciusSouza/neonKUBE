@@ -4463,68 +4463,62 @@ namespace TestCadence
         //---------------------------------------------------------------------
 
         [WorkflowInterface(TaskList = CadenceTestHelper.TaskList)]
-        public interface IWorkflowAmbientState : IWorkflow
+        public interface IWorkflowDefaultNullableArg : IWorkflow
         {
-            [WorkflowMethod()]
-            Task<bool> RunAsync();
+            [WorkflowMethod(Name = "test")]
+            Task<TimeSpan?> TestAsync(TimeSpan? value = null);
+
+            [WorkflowMethod(Name = "test-child")]
+            Task<TimeSpan?> TestChildAsync(bool useDefault, TimeSpan? value = null);
         }
 
         [Workflow(AutoRegister = true)]
-        public class WorkflowAmbientState : WorkflowBase, IWorkflowAmbientState
+        public class WorkflowDefaultNullableArg : WorkflowBase, IWorkflowDefaultNullableArg
         {
-            public async Task<bool> RunAsync()
-            {
-                // Returns TRUE when the workflow property and the correspending ambient
-                // reference the same instance.
-
-                return await Task.FromResult(object.ReferenceEquals(this.Workflow, Workflow.Current));
-            }
-        }
-
-        [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
-        public async Task Workflow_AmbientState()
-        {
-            // Verify that the ambient [Workflow.Current] property is being set properly.
-
-            var stub = client.NewWorkflowStub<IWorkflowAmbientState>();
-
-            Assert.Null(Workflow.Current);
-            Assert.True(await stub.RunAsync());
-            Assert.Null(Workflow.Current);
-        }
-
-        //---------------------------------------------------------------------
-
-        [WorkflowInterface(TaskList = CadenceTestHelper.TaskList)]
-        public interface IWorkflowNullables : IWorkflow
-        {
-            [WorkflowMethod]
-            Task<TimeSpan?> TestAsync(TimeSpan? value);
-        }
-
-        [Workflow(AutoRegister = true)]
-        public class WorkflowNullables : WorkflowBase, IWorkflowNullables
-        {
-            public async Task<TimeSpan?> TestAsync(TimeSpan? value)
+            public async Task<TimeSpan?> TestAsync(TimeSpan? value = null)
             {
                 return await Task.FromResult(value);
             }
+
+            public async Task<TimeSpan?> TestChildAsync(bool useDefault, TimeSpan? value = null)
+            {
+                var stub = Workflow.NewChildWorkflowStub<IWorkflowDefaultNullableArg>();
+
+                if (useDefault)
+                {
+                    return await stub.TestAsync();
+                }
+                else
+                {
+                    return await stub.TestAsync(value);
+                }
+            }
         }
 
         [Fact]
         [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
-        public async Task Workflow_Nullable()
+        public async Task Workflow_DefaultNullableArg_External()
         {
-            // Verify that nullable arguments and results are serialized properly.
+            // Verify that calling an external workflow with default arguments works.
 
-            var stub = client.NewWorkflowStub<IWorkflowNullables>();
+            var stub = client.NewWorkflowStub<IWorkflowDefaultNullableArg>();
+            Assert.Null(await stub.TestAsync());
 
-            Assert.Null(await stub.TestAsync(null));
+            stub = client.NewWorkflowStub<IWorkflowDefaultNullableArg>();
+            Assert.Equal(TimeSpan.FromSeconds(10), await stub.TestAsync(TimeSpan.FromSeconds(10)));
+        }
 
-            stub = client.NewWorkflowStub<IWorkflowNullables>();
+        [Fact]
+        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        public async Task Workflow_DefaultNullableArg_Child()
+        {
+            // Verify that calling a child workflow with default arguments works.
 
-            Assert.Equal(TimeSpan.FromSeconds(77), await stub.TestAsync(TimeSpan.FromSeconds(77)));
+            var stub = client.NewWorkflowStub<IWorkflowDefaultNullableArg>();
+            Assert.Null(await stub.TestChildAsync(useDefault: true));
+
+            stub = client.NewWorkflowStub<IWorkflowDefaultNullableArg>();
+            Assert.Equal(TimeSpan.FromSeconds(10), await stub.TestChildAsync(useDefault: false, TimeSpan.FromSeconds(10)));
         }
     }
 }

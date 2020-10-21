@@ -1107,34 +1107,34 @@ namespace TestCadence
         //---------------------------------------------------------------------
 
         [WorkflowInterface(TaskList = CadenceTestHelper.TaskList)]
-        public interface IActivityWorkflowNullables : IWorkflow
+        public interface IActivityWorkflowDefaultNullableArg : IWorkflow
         {
-            [WorkflowMethod]
-            Task<TimeSpan?> TestAsync(TimeSpan? value);
+            [WorkflowMethod(Name = "test")]
+            Task<TimeSpan?> TestAsync(bool local, bool useDefault, TimeSpan? value = null);
         }
 
         [Workflow(AutoRegister = true)]
-        public class ActivityWorkflowNullables : WorkflowBase, IActivityWorkflowNullables
+        public class ActivityWorkflowDefaultArg : WorkflowBase, IActivityWorkflowDefaultNullableArg
         {
-            public async Task<TimeSpan?> TestAsync(TimeSpan? value)
+            public async Task<TimeSpan?> TestAsync(bool local, bool useDefault, TimeSpan? value = null)
             {
-                var stub = Workflow.NewActivityStub<IActivityNullables>();
+                var stub = Workflow.NewActivityStub<IActivityDefaultNullableArg>();
 
                 return await stub.TestAsync(value);
             }
         }
 
         [ActivityInterface(TaskList = CadenceTestHelper.TaskList)]
-        public interface IActivityNullables : IActivity
+        public interface IActivityDefaultNullableArg : IActivity
         {
             [ActivityMethod]
-            Task<TimeSpan?> TestAsync(TimeSpan? value);
+            Task<TimeSpan?> TestAsync(TimeSpan? value = null);
         }
 
         [Activity(AutoRegister = true)]
-        public class ActivityNullables : ActivityBase, IActivityNullables
+        public class ActivityDefaultNullableArg : ActivityBase, IActivityDefaultNullableArg
         {
-            public async Task<TimeSpan?> TestAsync(TimeSpan? value)
+            public async Task<TimeSpan?> TestAsync(TimeSpan? value = null)
             {
                 return await Task.FromResult(value);
             }
@@ -1142,17 +1142,23 @@ namespace TestCadence
 
         [Fact]
         [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
-        public async Task Activity_Nullable()
+        public async Task Activity_DefaultDefaultNullableArg()
         {
-            // Verify that nullable activity arguments and results are serialized properly.
+            // Normal Activity: Verify that calling an activitiy with default arguments works.
 
-            var stub = client.NewWorkflowStub<IActivityWorkflowNullables>();
+            var stub = client.NewWorkflowStub<IActivityWorkflowDefaultNullableArg>();
+            Assert.Null(await stub.TestAsync(local: false, useDefault: true));
 
-            Assert.Null(await stub.TestAsync(null));
+            stub = client.NewWorkflowStub<IActivityWorkflowDefaultNullableArg>();
+            Assert.Equal(TimeSpan.FromSeconds(10), await stub.TestAsync(local: false, useDefault: false, TimeSpan.FromSeconds(10)));
 
-            stub = client.NewWorkflowStub<IActivityWorkflowNullables>();
+            // Local Activity: Verify that calling an activitiy with default arguments works.
 
-            Assert.Equal(TimeSpan.FromSeconds(77), await stub.TestAsync(TimeSpan.FromSeconds(77)));
+            stub = client.NewWorkflowStub<IActivityWorkflowDefaultNullableArg>();
+            Assert.Null(await stub.TestAsync(local: true, useDefault: true));
+
+            stub = client.NewWorkflowStub<IActivityWorkflowDefaultNullableArg>();
+            Assert.Equal(TimeSpan.FromSeconds(10), await stub.TestAsync(local: true, useDefault: false, TimeSpan.FromSeconds(10)));
         }
     }
 }
