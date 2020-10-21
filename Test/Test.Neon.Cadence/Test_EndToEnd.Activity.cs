@@ -1110,13 +1110,13 @@ namespace TestCadence
         public interface IActivityWorkflowDefaultNullableArg : IWorkflow
         {
             [WorkflowMethod(Name = "test")]
-            Task<TimeSpan?> TestAsync(bool local, bool useDefault, TimeSpan? value = null);
+            Task<DateTime?> TestAsync(bool local, bool useDefault, DateTime? value = null);
         }
 
         [Workflow(AutoRegister = true)]
         public class ActivityWorkflowDefaultArg : WorkflowBase, IActivityWorkflowDefaultNullableArg
         {
-            public async Task<TimeSpan?> TestAsync(bool local, bool useDefault, TimeSpan? value = null)
+            public async Task<DateTime?> TestAsync(bool local, bool useDefault, DateTime? value = null)
             {
                 var stub = Workflow.NewActivityStub<IActivityDefaultNullableArg>();
 
@@ -1128,13 +1128,13 @@ namespace TestCadence
         public interface IActivityDefaultNullableArg : IActivity
         {
             [ActivityMethod]
-            Task<TimeSpan?> TestAsync(TimeSpan? value = null);
+            Task<DateTime?> TestAsync(DateTime? value = null);
         }
 
         [Activity(AutoRegister = true)]
         public class ActivityDefaultNullableArg : ActivityBase, IActivityDefaultNullableArg
         {
-            public async Task<TimeSpan?> TestAsync(TimeSpan? value = null)
+            public async Task<DateTime?> TestAsync(DateTime? value = null)
             {
                 return await Task.FromResult(value);
             }
@@ -1144,13 +1144,15 @@ namespace TestCadence
         [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
         public async Task Activity_DefaultDefaultNullableArg()
         {
+            var testValue = new DateTime(2020, 10, 21);
+
             // Normal Activity: Verify that calling an activitiy with default arguments works.
 
             var stub = client.NewWorkflowStub<IActivityWorkflowDefaultNullableArg>();
             Assert.Null(await stub.TestAsync(local: false, useDefault: true));
 
             stub = client.NewWorkflowStub<IActivityWorkflowDefaultNullableArg>();
-            Assert.Equal(TimeSpan.FromSeconds(10), await stub.TestAsync(local: false, useDefault: false, TimeSpan.FromSeconds(10)));
+            Assert.Equal(testValue, await stub.TestAsync(local: false, useDefault: false, testValue));
 
             // Local Activity: Verify that calling an activitiy with default arguments works.
 
@@ -1158,7 +1160,7 @@ namespace TestCadence
             Assert.Null(await stub.TestAsync(local: true, useDefault: true));
 
             stub = client.NewWorkflowStub<IActivityWorkflowDefaultNullableArg>();
-            Assert.Equal(TimeSpan.FromSeconds(10), await stub.TestAsync(local: true, useDefault: false, TimeSpan.FromSeconds(10)));
+            Assert.Equal(testValue, await stub.TestAsync(local: true, useDefault: false, testValue));
         }
     }
 }
