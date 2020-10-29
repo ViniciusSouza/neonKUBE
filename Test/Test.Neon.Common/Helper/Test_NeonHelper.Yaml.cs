@@ -156,7 +156,7 @@ unmatched: Hello
             }
             catch (YamlException e)
             {
-                Assert.StartsWith("(line: ", e.Message);
+                Assert.StartsWith("(Line: ", e.Message);
             }
 
             const string badSyntax =
@@ -169,7 +169,7 @@ age: 56
             }
             catch (YamlException e)
             {
-                Assert.StartsWith("(line: ", e.Message);
+                Assert.StartsWith("(Line: ", e.Message);
             }
         }
 

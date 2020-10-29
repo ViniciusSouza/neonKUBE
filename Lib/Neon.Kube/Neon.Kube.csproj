@@ -50,16 +50,16 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="DNS" Version="5.0.0" />
-    <PackageReference Include="GitInfo" Version="2.0.26">
+    <PackageReference Include="DNS" Version="6.1.0" />
+    <PackageReference Include="GitInfo" Version="2.1.2">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="KubernetesClient" Version="1.6.8" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.1.0" />
+    <PackageReference Include="KubernetesClient" Version="3.0.4" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.1.9" />
     <PackageReference Include="Microsoft.Net.Http.Server" Version="1.1.4" />
-    <PackageReference Include="Microsoft.OpenApi" Version="1.1.4" />
-    <PackageReference Include="Microsoft.Windows.Compatibility" Version="3.1.0" />
+    <PackageReference Include="Microsoft.OpenApi" Version="1.2.3" />
+    <PackageReference Include="Microsoft.Windows.Compatibility" Version="3.1.1" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
     <PackageReference Include="SharpZipLib.NETStandard" Version="1.0.7" />
     <PackageReference Include="System.Diagnostics.Contracts" Version="4.3.0" />
@@ -68,7 +68,7 @@
     <PackageReference Include="System.Net.Ping" Version="4.3.0" />
     <PackageReference Include="System.Security.Cryptography.Algorithms" Version="4.3.1" />
     <PackageReference Include="System.Threading.Tasks.Parallel" Version="4.3.0" />
-    <PackageReference Include="YamlDotNet" Version="6.1.2" />
+    <PackageReference Include="YamlDotNet" Version="8.1.2" />
   </ItemGroup>
 
   <ItemGroup>

@@ -96,19 +96,6 @@ namespace Neon.Common
                 {
                     return new SerializerBuilder()
 
-                        // Note that we need to emit default values because it appears
-                        // that YamlDotNet does not recognize the [DefaultValue] attributes
-                        // and instead won't emit anything for zero values.  This means
-                        // that without this, zero integers, doubles, null strings or
-                        // enums with 0 values won't be emitted by default.
-                        //
-                        // Issues:
-                        //
-                        //      https://github.com/aaubry/YamlDotNet/issues/251
-                        //      https://github.com/aaubry/YamlDotNet/issues/298
-
-                        .EmitDefaults()
-
                         // We also need a custom type converter that honors [EnumMember]
                         // attributes on enumeration values.
                         //
