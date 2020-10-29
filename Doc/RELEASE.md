@@ -16,6 +16,7 @@
 4. Build and publish the nuget packages:
    ```
    neon-nuget-public
+   neon-builder -installer
    ```
 
 5. Verify that the new release installer works.
