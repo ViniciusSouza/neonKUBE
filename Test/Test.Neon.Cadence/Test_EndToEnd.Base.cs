@@ -306,10 +306,10 @@ namespace TestCadence
 
             var utcNow = DateTime.UtcNow;
 
-            // Wait a tiny bit to compensate for differences in the worksation
-            // and container clocks.
+            // Adjust the time backwards by 5 seconds because we're seeing some
+            // differences between the workstation clock and the WSL2 clock?
 
-            await Task.Delay(TimeSpan.FromMilliseconds(100));
+            utcNow = utcNow - TimeSpan.FromSeconds(5);
 
             // Execute a workflow and then verify that we can describe it.
 
