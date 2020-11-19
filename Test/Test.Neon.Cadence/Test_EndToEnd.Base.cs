@@ -306,6 +306,11 @@ namespace TestCadence
 
             var utcNow = DateTime.UtcNow;
 
+            // Wait a tiny bit to compensate for differences in the worksation
+            // and container clocks.
+
+            await Task.Delay(TimeSpan.FromMilliseconds(100));
+
             // Execute a workflow and then verify that we can describe it.
 
             const string workflowId = "my-base-workflow";
