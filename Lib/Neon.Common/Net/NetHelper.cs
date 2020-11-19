@@ -855,17 +855,23 @@ namespace Neon.Net
                 .FirstOrDefault(
                     netInterface =>
                     {
-                        // Filter out loopback interfaces and interfaces that aren't up.
+                        // Make sure that the interface has IPv4 addresses assigned and also that
+                        // the interface is assigned a default gateway.
+
+                        var ipProperties = netInterface.GetIPProperties();
+
+                        if (ipProperties == null || ipProperties.GatewayAddresses.IsEmpty())
+                        {
+                            return false;
+                        }
+
+                        // Filter out loopback interfaces, TAP interfaces and interfaces that aren't up.
 
                         if (netInterface.NetworkInterfaceType == NetworkInterfaceType.Loopback || 
                             netInterface.OperationalStatus != OperationalStatus.Up)
                         {
                             return false;
                         }
-
-                        // Make sure that the interface has IPv4 addresses assigned.
-
-                        var ipProperties = netInterface.GetIPProperties();
 
                         if (ipProperties == null)
                         {
