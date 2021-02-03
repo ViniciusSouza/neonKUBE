@@ -20,6 +20,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 using Neon.Diagnostics;
@@ -50,7 +51,7 @@ namespace Neon.Retry
     /// </remarks>
     public class LinearRetryPolicy : RetryPolicyBase, IRetryPolicy
     {
-        private Func<Exception, bool>   transientDetector;
+        private Func<Exception, bool> transientDetector;
 
         /// <summary>
         /// Constructs the retry policy with a specific transitent detection function.d
@@ -71,8 +72,8 @@ namespace Neon.Retry
             Covenant.Requires<ArgumentException>(retryInterval == null || retryInterval >= TimeSpan.Zero, nameof(retryInterval));
 
             this.transientDetector = transientDetector ?? (e => true);
-            this.MaxAttempts       = maxAttempts;
-            this.RetryInterval     = retryInterval ?? TimeSpan.FromSeconds(1);
+            this.MaxAttempts = maxAttempts;
+            this.RetryInterval = retryInterval ?? TimeSpan.FromSeconds(1);
         }
 
         /// <summary>
@@ -161,7 +162,7 @@ namespace Neon.Retry
         /// <inheritdoc/>
         public override async Task InvokeAsync(Func<Task> action)
         {
-            var attempts    = 0;
+            var attempts = 0;
             var sysDeadline = base.SysDeadline();
 
             while (true)
@@ -181,7 +182,7 @@ namespace Neon.Retry
                     }
 
                     LogTransient(e);
-                    await Task.Delay(RetryInterval);
+                    await Task.Delay(adjustedDelay);
                 }
             }
         }
@@ -189,7 +190,7 @@ namespace Neon.Retry
         /// <inheritdoc/>
         public override async Task<TResult> InvokeAsync<TResult>(Func<Task<TResult>> action)
         {
-            var attempts    = 0;
+            var attempts = 0;
             var sysDeadline = base.SysDeadline();
 
             while (true)
@@ -208,7 +209,62 @@ namespace Neon.Retry
                     }
 
                     LogTransient(e);
-                    await Task.Delay(RetryInterval);
+                    await Task.Delay(adjustedDelay);
+                }
+            }
+        }
+
+        /// <inheritdoc/>
+        public override void Invoke(Action action)
+        {
+            var attempts = 0;
+            var sysDeadline = base.SysDeadline();
+
+            while (true)
+            {
+                try
+                {
+                    action();
+                    return;
+                }
+                catch (Exception e)
+                {
+                    var adjustedDelay = AdjustDelay(RetryInterval, sysDeadline);
+
+                    if (++attempts >= MaxAttempts || !transientDetector(e))
+                    {
+                        throw;
+                    }
+
+                    LogTransient(e);
+                    Thread.Sleep(adjustedDelay);
+                }
+            }
+        }
+
+        /// <inheritdoc/>
+        public override TResult Invoke<TResult>(Func<TResult> action)
+        {
+            var attempts = 0;
+            var sysDeadline = base.SysDeadline();
+
+            while (true)
+            {
+                try
+                {
+                    return action();
+                }
+                catch (Exception e)
+                {
+                    var adjustedDelay = AdjustDelay(RetryInterval, sysDeadline);
+
+                    if (++attempts >= MaxAttempts || !transientDetector(e) || adjustedDelay <= TimeSpan.Zero)
+                    {
+                        throw;
+                    }
+
+                    LogTransient(e);
+                    Thread.Sleep(RetryInterval);
                 }
             }
         }

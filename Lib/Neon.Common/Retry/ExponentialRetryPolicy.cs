@@ -20,6 +20,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 using Neon.Diagnostics;
@@ -51,7 +52,7 @@ namespace Neon.Retry
     /// </remarks>
     public class ExponentialRetryPolicy : RetryPolicyBase, IRetryPolicy
     {
-        private Func<Exception, bool>   transientDetector;
+        private Func<Exception, bool> transientDetector;
 
         /// <summary>
         /// Constructs the retry policy with a specific transitent detection function.
@@ -73,10 +74,10 @@ namespace Neon.Retry
             Covenant.Requires<ArgumentException>(initialRetryInterval == null || initialRetryInterval > TimeSpan.Zero, nameof(initialRetryInterval));
             Covenant.Requires<ArgumentNullException>(maxRetryInterval >= initialRetryInterval || initialRetryInterval > TimeSpan.Zero || maxRetryInterval == null, nameof(maxRetryInterval));
 
-            this.transientDetector    = transientDetector ?? (e => true);
-            this.MaxAttempts          = maxAttempts;
+            this.transientDetector = transientDetector ?? (e => true);
+            this.MaxAttempts = maxAttempts;
             this.InitialRetryInterval = initialRetryInterval ?? TimeSpan.FromSeconds(1);
-            this.MaxRetryInterval     = maxRetryInterval ?? TimeSpan.FromHours(24);
+            this.MaxRetryInterval = maxRetryInterval ?? TimeSpan.FromHours(24);
 
             if (InitialRetryInterval > MaxRetryInterval)
             {
@@ -179,9 +180,9 @@ namespace Neon.Retry
         /// <inheritdoc/>
         public override async Task InvokeAsync(Func<Task> action)
         {
-            var attempts    = 0;
+            var attempts = 0;
             var sysDeadline = base.SysDeadline();
-            var interval    = InitialRetryInterval;
+            var interval = InitialRetryInterval;
 
             while (true)
             {
@@ -215,9 +216,9 @@ namespace Neon.Retry
         /// <inheritdoc/>
         public override async Task<TResult> InvokeAsync<TResult>(Func<Task<TResult>> action)
         {
-            var attempts    = 0;
+            var attempts = 0;
             var sysDeadline = base.SysDeadline();
-            var interval    = InitialRetryInterval;
+            var interval = InitialRetryInterval;
 
             while (true)
             {
@@ -236,6 +237,77 @@ namespace Neon.Retry
 
                     LogTransient(e);
                     await Task.Delay(adjustedDelay);
+
+                    interval = TimeSpan.FromTicks(interval.Ticks * 2);
+
+                    if (interval > MaxRetryInterval)
+                    {
+                        interval = MaxRetryInterval;
+                    }
+                }
+            }
+        }
+
+        /// <inheritdoc/>
+        public override void Invoke(Action action)
+        {
+            var attempts = 0;
+            var sysDeadline = base.SysDeadline();
+            var interval = InitialRetryInterval;
+
+            while (true)
+            {
+                try
+                {
+                    action();
+                    return;
+                }
+                catch (Exception e)
+                {
+                    var adjustedDelay = AdjustDelay(interval, sysDeadline);
+
+                    if (++attempts >= MaxAttempts || !transientDetector(e))
+                    {
+                        throw;
+                    }
+
+                    LogTransient(e);
+                    Thread.Sleep(adjustedDelay);
+
+                    interval = TimeSpan.FromTicks(interval.Ticks * 2);
+
+                    if (interval > MaxRetryInterval)
+                    {
+                        interval = MaxRetryInterval;
+                    }
+                }
+            }
+        }
+
+        /// <inheritdoc/>
+        public override TResult Invoke<TResult>(Func<TResult> action)
+        {
+            var attempts = 0;
+            var sysDeadline = base.SysDeadline();
+            var interval = InitialRetryInterval;
+
+            while (true)
+            {
+                try
+                {
+                    return action();
+                }
+                catch (Exception e)
+                {
+                    var adjustedDelay = AdjustDelay(interval, sysDeadline);
+
+                    if (++attempts >= MaxAttempts || !transientDetector(e) || adjustedDelay <= TimeSpan.Zero)
+                    {
+                        throw;
+                    }
+
+                    LogTransient(e);
+                    Thread.Sleep(adjustedDelay);
 
                     interval = TimeSpan.FromTicks(interval.Ticks * 2);
 

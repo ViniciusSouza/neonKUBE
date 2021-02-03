@@ -34,7 +34,7 @@ namespace Neon.Retry
     public abstract class RetryPolicy : IRetryPolicy
     {
         private INeonLogger log;
-        private DateTime    sysDeadline;
+        private DateTime sysDeadline;
 
         /// <summary>
         /// Constructor.
@@ -84,14 +84,20 @@ namespace Neon.Retry
         /// <inheritdoc/>
         public abstract Task<TResult> InvokeAsync<TResult>(Func<Task<TResult>> action);
 
+        /// <inheritdoc/>
+        public abstract void Invoke(Action action);
+
+        /// <inheritdoc/>
+        public abstract TResult Invoke<TResult>(Func<TResult> action);
+
         /// <summary>
-        /// Logs a transient exception that is going to be retried if logging
+        /// Logs a transient exception that will be retried if logging
         /// is enabled.
         /// </summary>
         /// <param name="e">The exception.</param>
         protected void LogTransient(Exception e)
         {
-            log?.LogWarn("[transient-retry]", e);
+            log?.LogInfo(e);
         }
 
         /// <summary>

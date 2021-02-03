@@ -41,7 +41,7 @@ namespace Neon.Retry
 
         //---------------------------------------------------------------------
         // Instance members
-        
+
         /// <summary>
         /// Constructor.
         /// </summary>
@@ -57,7 +57,7 @@ namespace Neon.Retry
         {
             // This class is invariant and doesn't use a transient detector
             // so we just return the same instance.
-            
+
             return this;
         }
 
@@ -73,6 +73,17 @@ namespace Neon.Retry
         {
             await SyncContext.ClearAsync;
             return await action();
+        }
+
+        /// <inheritdoc/>
+        public void Invoke(Action action)
+        {
+        }
+
+        /// <inheritdoc/>
+        public TResult Invoke<TResult>(Func<TResult> action)
+        {
+            return default(TResult);
         }
     }
 }

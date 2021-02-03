@@ -48,12 +48,6 @@ namespace TestCadence
     internal static class CadenceTestHelper
     {
         /// <summary>
-        /// Specifies the Cadence server Docker image to be started for unit testing.
-        /// </summary>
-        public const string CadenceImage = "nkubeio/cadence-dev:latest";
-        //public const string CadenceImage = "nkubeio/cadence-dev:v0.11.0";
-
-        /// <summary>
         /// <para>
         /// Controls whether <see cref="CadenceFixture"/> should be configured to leave
         /// the Cadence test container running after the unit tests complete.  This can

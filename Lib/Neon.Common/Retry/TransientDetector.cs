@@ -201,7 +201,7 @@ namespace Neon.Retry
 
                 if (message.StartsWith("[status="))
                 {
-                    var pos    = "[status=".Length;
+                    var pos = "[status=".Length;
                     var posEnd = message.IndexOf(',', 0);
 
                     if (int.TryParse(message.Substring(pos, posEnd - pos), out var statusCode))

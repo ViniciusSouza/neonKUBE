@@ -43,7 +43,7 @@ namespace Neon.Retry
         public RetryPolicyBase(string sourceModule = null, TimeSpan? timeout = null)
         {
             this.SourceModule = sourceModule;
-            this.Timeout      = timeout;
+            this.Timeout = timeout;
 
             if (!string.IsNullOrEmpty(sourceModule))
             {
@@ -63,19 +63,25 @@ namespace Neon.Retry
         /// <inheritdoc/>
         public abstract Task<TResult> InvokeAsync<TResult>(Func<Task<TResult>> action);
 
+        /// <inheritdoc/>
+        public abstract void Invoke(Action action);
+
+        /// <inheritdoc/>
+        public abstract TResult Invoke<TResult>(Func<TResult> action);
+
         /// <summary>
         /// Returns the source module.
         /// </summary>
         protected string SourceModule { get; private set; }
 
         /// <summary>
-        /// Logs a transient exception that is going to be retried if logging
+        /// Logs a transient exception that will be retried if logging
         /// is enabled.
         /// </summary>
         /// <param name="e">The exception.</param>
         protected void LogTransient(Exception e)
         {
-            log?.LogWarn("[transient-retry]", e);
+            log?.LogInfo(e);
         }
 
         /// <summary>
@@ -126,7 +132,7 @@ namespace Neon.Retry
         {
             Covenant.Requires<ArgumentException>(delay >= TimeSpan.Zero, nameof(delay));
 
-            var sysNow   = SysTime.Now;
+            var sysNow = SysTime.Now;
             var maxDelay = sysDeadline - sysNow;
 
             if (delay > maxDelay)

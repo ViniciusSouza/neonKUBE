@@ -41,12 +41,14 @@ namespace Neon.Net
     {
         // Retry [hosts] file munging operations for up to 10 seconds at 100ms intervals.
 
-        private static readonly TimeSpan maxRetryTime  = TimeSpan.FromSeconds(10);
-        private static readonly TimeSpan retryInterval = TimeSpan.FromMilliseconds(100);
-        private static readonly int maxAttempts        = (int)Math.Max(1, maxRetryTime.TotalMilliseconds / retryInterval.TotalMilliseconds);
+        private static readonly TimeSpan    maxRetryTime  = TimeSpan.FromSeconds(10);
+        private static readonly TimeSpan    retryInterval = TimeSpan.FromMilliseconds(100);
+        private static readonly int         maxAttempts   = (int)Math.Max(1, maxRetryTime.TotalMilliseconds / retryInterval.TotalMilliseconds);
 
-        private static LinearRetryPolicy retryFile     = new LinearRetryPolicy(typeof(IOException), maxAttempts: maxAttempts, retryInterval: retryInterval);
-        private static LinearRetryPolicy retryReady    = new LinearRetryPolicy(typeof(NotReadyException), maxAttempts: maxAttempts, retryInterval: retryInterval);
+        private static LinearRetryPolicy    retryFile     = new LinearRetryPolicy(typeof(IOException), maxAttempts: maxAttempts, retryInterval: retryInterval);
+        private static LinearRetryPolicy    retryReady    = new LinearRetryPolicy(typeof(NotReadyException), maxAttempts: maxAttempts, retryInterval: retryInterval);
+
+        private static readonly Regex       ipv4Regex     = new Regex(@"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}", RegexOptions.Compiled);
 
         /// <summary>
         /// Regex for verifying DNS hostnames.
@@ -66,6 +68,79 @@ namespace Neon.Net
             }
 
             return DnsHostRegex.IsMatch(host);
+        }
+
+
+        /// <summary>
+        /// Parses an IPv4 address.
+        /// </summary>
+        /// <param name="input">The address text.</param>
+        /// <returns>The <see cref="IPAddress"/>.</returns>
+        /// <exception cref="FormatException">Thrown for an invalid address.</exception>
+        public static IPAddress ParseIPv4Address(string input)
+        {
+            Covenant.Requires<ArgumentNullException>(!string.IsNullOrEmpty(input), nameof(input));
+
+            if (!ipv4Regex.IsMatch(input) || !IPAddress.TryParse(input, out var address) || address.AddressFamily != AddressFamily.InterNetwork)
+            {
+                throw new FormatException($"[{input}] is not a valid IPv4 address.");
+            }
+
+            return address;
+        }
+
+        /// <summary>
+        /// Attempts to parse an IPv4 address.
+        /// </summary>
+        /// <param name="input">The address text.</param>
+        /// <param name="address">Set to the parsed address on success.</param>
+        /// <returns><c>true</c> on success.</returns>
+        public static bool TryParseIPv4Address(string input, out IPAddress address)
+        {
+            address = default(IPAddress);
+
+            if (input == null || !ipv4Regex.IsMatch(input) || !IPAddress.TryParse(input, out address) || address.AddressFamily != AddressFamily.InterNetwork)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Parses an IPv6 address.
+        /// </summary>
+        /// <param name="input">The address text.</param>
+        /// <returns>The <see cref="IPAddress"/>.</returns>
+        /// <exception cref="FormatException">Thrown for an invalid address.</exception>
+        public static IPAddress ParseIPv6Address(string input)
+        {
+            Covenant.Requires<ArgumentNullException>(!string.IsNullOrEmpty(input), nameof(input));
+
+            if (!IPAddress.TryParse(input, out var address) || address.AddressFamily != AddressFamily.InterNetworkV6)
+            {
+                throw new FormatException($"[{input}] is not a valid IPv6 address.");
+            }
+
+            return address;
+        }
+
+        /// <summary>
+        /// Attempts to parse an IPv4 address.
+        /// </summary>
+        /// <param name="input">The address text.</param>
+        /// <param name="address">Set to the parsed address on success.</param>
+        /// <returns><c>true</c> on success.</returns>
+        public static bool TryParseIPv6Address(string input, out IPAddress address)
+        {
+            address = default(IPAddress);
+
+            if (input == null || !IPAddress.TryParse(input, out address) || address.AddressFamily != AddressFamily.InterNetworkV6)
+            {
+                return false;
+            }
+
+            return true;
         }
 
         /// <summary>

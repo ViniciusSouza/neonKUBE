@@ -70,7 +70,7 @@ namespace TestCadence
                 DebugDisableHeartbeats = CadenceTestHelper.DebugDisableHeartbeats
             };
 
-            fixture.Start(settings, image: CadenceTestHelper.CadenceImage, keepConnection: true);
+            fixture.Start(settings, reconnect: false);
 
             this.fixture     = fixture;
             this.client      = fixture.Client;

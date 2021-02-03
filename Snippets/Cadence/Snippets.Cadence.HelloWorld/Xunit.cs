@@ -58,7 +58,7 @@ namespace MyTests
             // You can pass [keepOpen=false] to have the fixture remove the container after the
             // test run if you wish.
 
-            if (fixture.Start(settings, keepConnection: true, keepOpen: true) == TestFixtureStatus.Started)
+            if (fixture.Start(settings) == TestFixtureStatus.Started)
             {
                 // Register the test workflow and activity implementations
                 // from this assembly and start the worker.
