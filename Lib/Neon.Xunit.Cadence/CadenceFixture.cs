@@ -71,8 +71,6 @@ namespace Neon.Xunit.Cadence
 services:
   cassandra:
     image: cassandra:3.11
-    ports:
-      - 9042:9042
     environment:
       - HEAP_NEWSIZE=1M
       - MAX_HEAP_SIZE=1024M
@@ -498,7 +496,7 @@ services:
         /// </summary>
         public override void OnRestart()
         {
-            if (reconnect)
+            if (!reconnect)
             {
                 // We're going to continue using the same connection.
 
