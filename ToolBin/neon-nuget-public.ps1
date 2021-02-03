@@ -79,16 +79,16 @@ SetVersion Neon.Couchbase
 SetVersion Neon.Cryptography
 SetVersion Neon.Docker
 SetVersion Neon.HyperV
-SetVersion Neon.Kube
-SetVersion Neon.Kube.Aws
-SetVersion Neon.Kube.Azure
-SetVersion Neon.Kube.Google
-SetVersion Neon.Kube.Hosting
-SetVersion Neon.Kube.HyperV
-SetVersion Neon.Kube.HyperVLocal
-SetVersion Neon.Kube.Machine
-SetVersion Neon.Kube.Service
-SetVersion Neon.Kube.XenServer
+# SetVersion Neon.Kube
+# SetVersion Neon.Kube.Aws
+# SetVersion Neon.Kube.Azure
+# SetVersion Neon.Kube.Google
+# SetVersion Neon.Kube.Hosting
+# SetVersion Neon.Kube.HyperV
+# SetVersion Neon.Kube.HyperVLocal
+# SetVersion Neon.Kube.Machine
+# SetVersion Neon.Kube.Service
+# SetVersion Neon.Kube.XenServer
 SetVersion Neon.ModelGen
 SetVersion Neon.Nats
 SetVersion Neon.SSH.NET
@@ -107,16 +107,16 @@ Publish Neon.Couchbase
 Publish Neon.Cryptography
 Publish Neon.Docker
 Publish Neon.HyperV
-Publish Neon.Kube
-Publish Neon.Kube.Aws
-Publish Neon.Kube.Azure
-Publish Neon.Kube.Google
-Publish Neon.Kube.Hosting
-Publish Neon.Kube.HyperV
-Publish Neon.Kube.HyperVLocal
-Publish Neon.Kube.Machine
-Publish Neon.Kube.Service
-Publish Neon.Kube.XenServer
+# Publish Neon.Kube
+# Publish Neon.Kube.Aws
+# Publish Neon.Kube.Azure
+# Publish Neon.Kube.Google
+# Publish Neon.Kube.Hosting
+# Publish Neon.Kube.HyperV
+# Publish Neon.Kube.HyperVLocal
+# Publish Neon.Kube.Machine
+# Publish Neon.Kube.Service
+# Publish Neon.Kube.XenServer
 Publish Neon.ModelGen
 Publish Neon.Nats
 Publish Neon.SSH.NET
