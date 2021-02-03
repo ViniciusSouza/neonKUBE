@@ -306,10 +306,9 @@ services:
                 NeonHelper.ExecuteCapture(NeonHelper.DockerCli, new object[] { "rm", "--force",
                     new string[]
                     {
-                        "temporal-admin-tools",
-                        "temporal-web",
-                        "temporal-dev_temporal_1",
-                        "temporal-postgresql"
+                        "temporal-dev_cassandra_1",
+                        "temporal-dev_temporal-web_1",
+                        "temporal-dev_temporal_1"
                     } });
 
 
