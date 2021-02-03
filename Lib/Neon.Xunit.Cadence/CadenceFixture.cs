@@ -369,7 +369,7 @@ services:
                 };
 
                 settings.Servers.Clear();
-                settings.Servers.Add($"http://10.0.0.2:{NetworkPorts.Cadence}");
+                settings.Servers.Add($"http://localhost:{NetworkPorts.Cadence}");
 
                 this.settings  = settings;
                 this.reconnect = reconnect;
