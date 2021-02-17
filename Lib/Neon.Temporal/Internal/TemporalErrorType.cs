@@ -31,39 +31,63 @@ namespace Neon.Temporal.Internal
     public enum TemporalErrorType
     {
         /// <summary>
-        /// An operation was cancelled.
+        /// Error returned from activity implementations with message and optional details.
         /// </summary>
-        [EnumMember(Value = "cancelled")]
-        Cancelled,
+        [EnumMember(Value = "application")]
+        Application,
 
         /// <summary>
-        /// Custom error.
+        /// Error returned when operation was canceled.
         /// </summary>
-        [EnumMember(Value = "custom")]
-        Custom,
+        [EnumMember(Value = "canceled")]
+        Canceled,
 
         /// <summary>
-        /// Generic error.
+        /// Error returned from workflow when activity returned an error
         /// </summary>
-        [EnumMember(Value = "generic")]
-        Generic,
+        [EnumMember(Value = "activity")]
+        Activity,
 
         /// <summary>
-        /// Panic error.
+        /// Error can be returned from server.
         /// </summary>
-        [EnumMember(Value = "panic")]
-        Panic,
+        [EnumMember(Value = "server")]
+        Server,
 
         /// <summary>
-        /// Terminated error.
+        /// Error returned from workflow when child workflow returned an error.
+        /// </summary>
+        [EnumMember(Value = "childWorkflowExecution")]
+        ChildWorkflowExecution,
+
+        /// <summary>
+        /// Error returned from workflow.
+        /// </summary>
+        [EnumMember(Value = "workflowExecution")]
+        WorkflowExecutionError,
+
+        /// <summary>
+        /// Error returned when activity or child workflow timed out.
+        /// </summary>
+        [EnumMember(Value = "timeout")]
+        Timeout,
+
+        /// <summary>
+        /// Error returned when workflow was terminated.
         /// </summary>
         [EnumMember(Value = "terminated")]
         Terminated,
 
         /// <summary>
-        /// Timeout error.
+        /// Error contains information about panicked workflow/activity.
         /// </summary>
-        [EnumMember(Value = "timeout")]
-        Timeout
+        [EnumMember(Value = "panic")]
+        Panic,
+
+        /// <summary>
+        /// Error can be returned when external workflow doesn't exist.
+        /// </summary>
+        [EnumMember(Value = "unknownExternalWorkflowExecution")]
+        UnknownExternalWorkflowExecution
     }
 }

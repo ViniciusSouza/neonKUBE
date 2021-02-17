@@ -1,5 +1,5 @@
 ﻿//-----------------------------------------------------------------------------
-// FILE:	    CancelledException.cs
+// FILE:	    WorkflowTypeException.cs
 // CONTRIBUTOR: Jeff Lill
 // COPYRIGHT:	Copyright (c) 2005-2021 by neonFORGE LLC.  All rights reserved.
 //
@@ -22,21 +22,39 @@ using Neon.Temporal.Internal;
 namespace Neon.Temporal
 {
     /// <summary>
-    /// Thrown when a Temporal operation is cancelled.
+    /// Thrown when ak workflow interface or implementation is not valid.
     /// </summary>
-    public class CancelledException : TemporalException
+    public class WorkflowException : TemporalException
     {
         /// <summary>
-        /// Constructor.
+        /// Default constructor.
         /// </summary>
-        /// <param name="message">Optionally specifies a message.</param>
-        /// <param name="innerException">Optionally specifies an inner exception.</param>
-        public CancelledException(string message = null, Exception innerException = null)
-            : base(message, innerException)
+        public WorkflowException()
         {
         }
 
-        /// <inheritdoc/>
-        internal override TemporalErrorType TemporalErrorType => TemporalErrorType.Cancelled;
+        /// <summary>
+        /// Constructor.
+        /// </summary>
+        /// <param name="message">The message.</param>
+        /// <param name="innerException">Optionally specifies an inner exception.</param>
+        public WorkflowException(
+            string       workflowId,
+            string       runId,
+            WorkflowType workflowType,
+            string       message = null ,
+            Exception    innerException = null)
+            : base(message, innerException)
+        {
+            this.WorkflowId   = workflowId;
+            this.RunId        = runId;
+            this.WorkflowType = workflowType;
+        }
+
+        internal override TemporalErrorType TemporalErrorType => TemporalErrorType.WorkflowExecutionError;
+
+        public string WorkflowId { get; }
+        public string RunId { get; }
+        public WorkflowType WorkflowType { get; }
     }
 }

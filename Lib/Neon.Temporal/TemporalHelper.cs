@@ -273,32 +273,32 @@ namespace Neon.Temporal.Internal
 
             if (!workflowInterface.IsInterface)
             {
-                throw new WorkflowTypeException($"[{workflowInterface.FullName}] is not an interface.");
+                throw new WorkflowException($"[{workflowInterface.FullName}] is not an interface.");
             }
 
             if (!workflowInterface.Implements<IWorkflow>())
             {
-                throw new WorkflowTypeException($"[{workflowInterface.FullName}] does not implement [{typeof(IWorkflow).FullName}].");
+                throw new WorkflowException($"[{workflowInterface.FullName}] does not implement [{typeof(IWorkflow).FullName}].");
             }
 
             if (workflowInterface.IsGenericType)
             {
-                throw new WorkflowTypeException($"[{workflowInterface.FullName}] has generic type parameters.  Workflow interfaces cannot be generic.");
+                throw new WorkflowException($"[{workflowInterface.FullName}] has generic type parameters.  Workflow interfaces cannot be generic.");
             }
 
             if (!workflowInterface.IsPublic && !workflowInterface.IsNestedPublic)
             {
-                throw new WorkflowTypeException($"Workflow interface [{workflowInterface.FullName}] is not public.");
+                throw new WorkflowException($"Workflow interface [{workflowInterface.FullName}] is not public.");
             }
 
             if (workflowInterface.GetCustomAttribute<ActivityInterfaceAttribute>() != null)
             {
-                throw new WorkflowTypeException($"Workflow interface [{workflowInterface.FullName}] cannot be tagged with [ActivityInterface] because it doesn't define an activity.");
+                throw new WorkflowException($"Workflow interface [{workflowInterface.FullName}] cannot be tagged with [ActivityInterface] because it doesn't define an activity.");
             }
 
             if (workflowInterface.GetCustomAttribute<WorkflowAttribute>() != null)
             {
-                throw new WorkflowTypeException($"Workflow interface [{workflowInterface.FullName}] cannot not be tagged with [Workflow] because that is valid only for activity implementation classes.");
+                throw new WorkflowException($"Workflow interface [{workflowInterface.FullName}] cannot not be tagged with [Workflow] because that is valid only for activity implementation classes.");
             }
 
             // Validate the entrypoint method names and result types.
@@ -316,24 +316,24 @@ namespace Neon.Temporal.Internal
 
                 if (method.IsGenericMethod)
                 {
-                    throw new WorkflowTypeException($"Workflow entrypoint method [{workflowInterface.FullName}.{method.Name}()] is generic.  Generic methods are not supported by Temporal.");
+                    throw new WorkflowException($"Workflow entrypoint method [{workflowInterface.FullName}.{method.Name}()] is generic.  Generic methods are not supported by Temporal.");
                 }
 
                 if (!(TemporalHelper.IsTask(method.ReturnType) || TemporalHelper.IsTaskT(method.ReturnType)))
                 {
-                    throw new WorkflowTypeException($"Workflow entrypoint method [{workflowInterface.FullName}.{method.Name}()] must return a Task.");
+                    throw new WorkflowException($"Workflow entrypoint method [{workflowInterface.FullName}.{method.Name}()] must return a Task.");
                 }
 
                 var name = workflowMethodAttribute.Name ?? string.Empty;
 
                 if (name == string.Empty && workflowMethodAttribute.IsFullName)
                 {
-                    throw new WorkflowTypeException($"Workflow entrypoint method [{workflowInterface.FullName}.{method.Name}()] specifies [WorkflowMethod(Name = \"\", IsFullName=true)].  Fully qualified names cannot be NULL or blank.");
+                    throw new WorkflowException($"Workflow entrypoint method [{workflowInterface.FullName}.{method.Name}()] specifies [WorkflowMethod(Name = \"\", IsFullName=true)].  Fully qualified names cannot be NULL or blank.");
                 }
 
                 if (workflowNames.Contains(name))
                 {
-                    throw new WorkflowTypeException($"Multiple entrypoint methods are tagged by [WorkflowMethod(Name = \"{name}\")].");
+                    throw new WorkflowException($"Multiple entrypoint methods are tagged by [WorkflowMethod(Name = \"{name}\")].");
                 }
 
                 workflowNames.Add(name);
@@ -359,26 +359,26 @@ namespace Neon.Temporal.Internal
 
                 if (method.IsGenericMethod)
                 {
-                    throw new WorkflowTypeException($"Workflow signal method [{workflowInterface.FullName}.{method.Name}()] is generic.  Generic methods are not supported by Temporal.");
+                    throw new WorkflowException($"Workflow signal method [{workflowInterface.FullName}.{method.Name}()] is generic.  Generic methods are not supported by Temporal.");
                 }
 
                 if (signalMethodAttribute.Synchronous)
                 {
                     if (!TemporalHelper.IsTask(method.ReturnType) && !TemporalHelper.IsTaskT(method.ReturnType))
                     {
-                        throw new WorkflowTypeException($"Synchronous signal method [{workflowInterface.FullName}.{method.Name}()] must return a [Task] or [Task<T>].");
+                        throw new WorkflowException($"Synchronous signal method [{workflowInterface.FullName}.{method.Name}()] must return a [Task] or [Task<T>].");
                     }
                 }
                 else
                 {
                     if (!TemporalHelper.IsTask(method.ReturnType))
                     {
-                        throw new WorkflowTypeException($"Fire-and-forget signal method [{workflowInterface.FullName}.{method.Name}()] must return a Task.");
+                        throw new WorkflowException($"Fire-and-forget signal method [{workflowInterface.FullName}.{method.Name}()] must return a Task.");
                     }
 
                     if (TemporalHelper.IsTaskT(method.ReturnType))
                     {
-                        throw new WorkflowTypeException($"Fire-and-forget signal method [{workflowInterface.FullName}.{method.Name}()] cannot return a result via a [Task<T>].  Use [SignalMethod(Synchronous = true)] to enable this.");
+                        throw new WorkflowException($"Fire-and-forget signal method [{workflowInterface.FullName}.{method.Name}()] cannot return a result via a [Task<T>].  Use [SignalMethod(Synchronous = true)] to enable this.");
                     }
                 }
 
@@ -386,7 +386,7 @@ namespace Neon.Temporal.Internal
 
                 if (signalNames.Contains(name))
                 {
-                    throw new WorkflowTypeException($"Multiple [{workflowInterface.FullName}] signal methods are tagged by [SignalMethod(name:\"{name}\")].");
+                    throw new WorkflowException($"Multiple [{workflowInterface.FullName}] signal methods are tagged by [SignalMethod(name:\"{name}\")].");
                 }
 
                 signalNames.Add(name);
@@ -407,19 +407,19 @@ namespace Neon.Temporal.Internal
 
                 if (method.IsGenericMethod)
                 {
-                    throw new WorkflowTypeException($"Workflow query method [{workflowInterface.FullName}.{method.Name}()] is generic.  Generic methods are not supported by Temporal.");
+                    throw new WorkflowException($"Workflow query method [{workflowInterface.FullName}.{method.Name}()] is generic.  Generic methods are not supported by Temporal.");
                 }
 
                 if (!(TemporalHelper.IsTask(method.ReturnType) || TemporalHelper.IsTaskT(method.ReturnType)))
                 {
-                    throw new WorkflowTypeException($"Workflow query method [{workflowInterface.FullName}.{method.Name}()] must return a Task.");
+                    throw new WorkflowException($"Workflow query method [{workflowInterface.FullName}.{method.Name}()] must return a Task.");
                 }
 
                 var name = queryMethodAttribute.Name ?? string.Empty;
 
                 if (queryNames.Contains(name))
                 {
-                    throw new WorkflowTypeException($"Multiple [{workflowInterface.FullName}] query methods are tagged by [QueryMethod(name:\"{name}\")].");
+                    throw new WorkflowException($"Multiple [{workflowInterface.FullName}] query methods are tagged by [QueryMethod(name:\"{name}\")].");
                 }
 
                 queryNames.Add(name);
@@ -430,14 +430,14 @@ namespace Neon.Temporal.Internal
         /// Ensures that the type passed is a valid workflow implementation.
         /// </summary>
         /// <param name="workflowType">The type being tested.</param>
-        /// <exception cref="WorkflowTypeException">Thrown when the interface is not valid.</exception>
+        /// <exception cref="WorkflowException">Thrown when the interface is not valid.</exception>
         internal static void ValidateWorkflowImplementation(Type workflowType)
         {
             Covenant.Requires<ArgumentNullException>(workflowType != null, nameof(workflowType));
 
             if (workflowType.IsInterface)
             {
-                throw new WorkflowTypeException($"[{workflowType.FullName}] workflow implementation cannot be an interface.");
+                throw new WorkflowException($"[{workflowType.FullName}] workflow implementation cannot be an interface.");
             }
 
             if (workflowType.IsValueType)
@@ -447,24 +447,24 @@ namespace Neon.Temporal.Internal
 
             if (workflowType.IsGenericType)
             {
-                throw new WorkflowTypeException($"[{workflowType.FullName}] has generic type parameters.  Workflow implementations cannot be generic.");
+                throw new WorkflowException($"[{workflowType.FullName}] has generic type parameters.  Workflow implementations cannot be generic.");
             }
 
             if (workflowType.BaseType != typeof(WorkflowBase))
             {
                 if (workflowType.BaseType == typeof(ActivityBase))
                 {
-                    throw new WorkflowTypeException($"[{workflowType.FullName}] does not inherit [{typeof(WorkflowBase).FullName}].  Did you mean to use [Activity]?");
+                    throw new WorkflowException($"[{workflowType.FullName}] does not inherit [{typeof(WorkflowBase).FullName}].  Did you mean to use [Activity]?");
                 }
                 else
                 {
-                    throw new WorkflowTypeException($"[{workflowType.FullName}] does not inherit [{typeof(WorkflowBase).FullName}].");
+                    throw new WorkflowException($"[{workflowType.FullName}] does not inherit [{typeof(WorkflowBase).FullName}].");
                 }
             }
 
             if (workflowType == typeof(WorkflowBase))
             {
-                throw new WorkflowTypeException($"The base [{nameof(WorkflowBase)}] class cannot be a workflow implementation.");
+                throw new WorkflowException($"The base [{nameof(WorkflowBase)}] class cannot be a workflow implementation.");
             }
 
             var workflowInterfaces = new List<Type>();
@@ -480,21 +480,21 @@ namespace Neon.Temporal.Internal
 
             if (workflowInterfaces.Count == 0)
             {
-                throw new WorkflowTypeException($"Workflow class [{workflowType.FullName}] does not implement an interface that derives from [{typeof(IWorkflow).FullName}].");
+                throw new WorkflowException($"Workflow class [{workflowType.FullName}] does not implement an interface that derives from [{typeof(IWorkflow).FullName}].");
             }
             else if (workflowInterfaces.Count > 1)
             {
-                throw new WorkflowTypeException($"Workflow class [{workflowType.FullName}] implements multiple workflow interfaces that derive from [{typeof(IWorkflow).FullName}].  This is not supported.");
+                throw new WorkflowException($"Workflow class [{workflowType.FullName}] implements multiple workflow interfaces that derive from [{typeof(IWorkflow).FullName}].  This is not supported.");
             }
 
             if (workflowType.GetCustomAttribute<ActivityAttribute>() != null)
             {
-                throw new WorkflowTypeException($"Workflow class [{workflowType.FullName}] cannot be tagged with [Activity] because it doesn't implement a workflow.");
+                throw new WorkflowException($"Workflow class [{workflowType.FullName}] cannot be tagged with [Activity] because it doesn't implement a workflow.");
             }
 
             if (workflowType.GetCustomAttribute<WorkflowInterfaceAttribute>() != null)
             {
-                throw new WorkflowTypeException($"Workflow class [{workflowType.FullName}] cannot not be tagged with [WorkflowInterface] because that is valid only for workflow definition interfaces.");
+                throw new WorkflowException($"Workflow class [{workflowType.FullName}] cannot not be tagged with [WorkflowInterface] because that is valid only for workflow definition interfaces.");
             }
         }
 
@@ -563,12 +563,12 @@ namespace Neon.Temporal.Internal
 
             if (activityInterface.GetCustomAttribute<WorkflowInterfaceAttribute>() != null)
             {
-                throw new WorkflowTypeException($"Workflow interface [{activityInterface.FullName}] cannot be tagged with [WorkflowInterface] because it doesn't define a workflow.");
+                throw new WorkflowException($"Workflow interface [{activityInterface.FullName}] cannot be tagged with [WorkflowInterface] because it doesn't define a workflow.");
             }
 
             if (activityInterface.GetCustomAttribute<ActivityAttribute>() != null)
             {
-                throw new WorkflowTypeException($"Activity interface [{activityInterface.FullName}] cannot not be tagged with [Activity] because that is valid only for activity implementation classes.");
+                throw new WorkflowException($"Activity interface [{activityInterface.FullName}] cannot not be tagged with [Activity] because that is valid only for activity implementation classes.");
             }
 
             // Validate the activity methods.
@@ -586,7 +586,7 @@ namespace Neon.Temporal.Internal
 
                 if (!(TemporalHelper.IsTask(method.ReturnType) || TemporalHelper.IsTaskT(method.ReturnType)))
                 {
-                    throw new WorkflowTypeException($"Activity interface method [{activityInterface.FullName}.{method.Name}()] must return a [Task].");
+                    throw new WorkflowException($"Activity interface method [{activityInterface.FullName}.{method.Name}()] must return a [Task].");
                 }
 
                 var name = activityMethodAttribute.Name ?? string.Empty;
@@ -635,11 +635,11 @@ namespace Neon.Temporal.Internal
                 {
                     if (activityType.BaseType == typeof(WorkflowBase))
                     {
-                        throw new WorkflowTypeException($"[{activityType.FullName}] does not inherit [{typeof(ActivityBase).FullName}].  Did you mean to use [Workflow]?");
+                        throw new WorkflowException($"[{activityType.FullName}] does not inherit [{typeof(ActivityBase).FullName}].  Did you mean to use [Workflow]?");
                     }
                     else
                     {
-                        throw new WorkflowTypeException($"[{activityType.FullName}] does not inherit [{typeof(ActivityBase).FullName}].");
+                        throw new WorkflowException($"[{activityType.FullName}] does not inherit [{typeof(ActivityBase).FullName}].");
                     }
                 }
             }
@@ -671,12 +671,12 @@ namespace Neon.Temporal.Internal
 
             if (activityType.GetCustomAttribute<WorkflowAttribute>() != null)
             {
-                throw new WorkflowTypeException($"Activity class [{activityType.FullName}] cannot be tagged with [Workflow] because it doesn't implement a workflow.");
+                throw new WorkflowException($"Activity class [{activityType.FullName}] cannot be tagged with [Workflow] because it doesn't implement a workflow.");
             }
 
             if (activityType.GetCustomAttribute<ActivityInterfaceAttribute>() != null)
             {
-                throw new WorkflowTypeException($"Activity class [{activityType.FullName}] cannot not be tagged with [ActivityInterface] because that is valid only for activity definition interfaces.");
+                throw new WorkflowException($"Activity class [{activityType.FullName}] cannot not be tagged with [ActivityInterface] because that is valid only for activity definition interfaces.");
             }
 
             // Validate the methods.

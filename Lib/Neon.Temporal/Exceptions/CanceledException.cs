@@ -1,5 +1,5 @@
 ﻿//-----------------------------------------------------------------------------
-// FILE:	    WorkflowTypeException.cs
+// FILE:	    CanceledException.cs
 // CONTRIBUTOR: Jeff Lill
 // COPYRIGHT:	Copyright (c) 2005-2021 by neonFORGE LLC.  All rights reserved.
 //
@@ -22,25 +22,21 @@ using Neon.Temporal.Internal;
 namespace Neon.Temporal
 {
     /// <summary>
-    /// Thrown when ak workflow interface or implementation is not valid.
+    /// Thrown when a Temporal operation is cancelled.
     /// </summary>
-    public class WorkflowTypeException : Exception
+    public class CanceledException : TemporalException
     {
-        /// <summary>
-        /// Default constructor.
-        /// </summary>
-        public WorkflowTypeException()
-        {
-        }
-
         /// <summary>
         /// Constructor.
         /// </summary>
-        /// <param name="message">The message.</param>
+        /// <param name="message">Optionally specifies a message.</param>
         /// <param name="innerException">Optionally specifies an inner exception.</param>
-        public WorkflowTypeException(string message, Exception innerException = null)
+        public CanceledException(string message = null, Exception innerException = null)
             : base(message, innerException)
         {
         }
+
+        /// <inheritdoc/>
+        internal override TemporalErrorType TemporalErrorType => TemporalErrorType.Canceled;
     }
 }

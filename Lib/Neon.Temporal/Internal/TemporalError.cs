@@ -279,7 +279,7 @@ namespace Neon.Temporal.Internal
             {
                 case TemporalErrorType.Cancelled:
 
-                    return new CancelledException(message) { Reason = reason };
+                    return new CanceledException(message) { Reason = reason };
 
                 case TemporalErrorType.Custom:
 

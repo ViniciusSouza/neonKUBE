@@ -441,7 +441,7 @@ namespace Neon.Temporal
             {
                 return new ActivityInvokeReply()
                 {
-                    Error = new CancelledException(e.Message).ToTemporalError()
+                    Error = new CanceledException(e.Message).ToTemporalError()
                 };
             }
             catch (Exception e)

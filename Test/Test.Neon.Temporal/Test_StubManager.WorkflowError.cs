@@ -57,7 +57,7 @@ namespace TestTemporal
         {
             // We don't support workflow interfaces with generic parameters.
 
-            Assert.Throws<WorkflowTypeException>(() => StubManager.NewWorkflowStub<IErrorGenericWorkflow<int>>(client));
+            Assert.Throws<WorkflowException>(() => StubManager.NewWorkflowStub<IErrorGenericWorkflow<int>>(client));
         }
 
         //---------------------------------------------------------------------
@@ -72,7 +72,7 @@ namespace TestTemporal
         {
             // Workflows need to have at least one entry point.
 
-            Assert.Throws<WorkflowTypeException>(() => StubManager.NewWorkflowStub<IErrorNoEntryPointWorkflow>(client));
+            Assert.Throws<WorkflowException>(() => StubManager.NewWorkflowStub<IErrorNoEntryPointWorkflow>(client));
         }
 
         [Fact]
@@ -101,7 +101,7 @@ namespace TestTemporal
         {
             // Only workflow interfaces are allowed.
 
-            Assert.Throws<WorkflowTypeException>(() => StubManager.NewWorkflowStub<IErrorNotInterfaceWorkflow>(client));
+            Assert.Throws<WorkflowException>(() => StubManager.NewWorkflowStub<IErrorNotInterfaceWorkflow>(client));
         }
 
         //---------------------------------------------------------------------
@@ -121,7 +121,7 @@ namespace TestTemporal
         {
             // Workflow interfaces must be public.
 
-            Assert.Throws<WorkflowTypeException>(() => StubManager.NewWorkflowStub<IErrorNotPublicWorkflow>(client));
+            Assert.Throws<WorkflowException>(() => StubManager.NewWorkflowStub<IErrorNotPublicWorkflow>(client));
         }
 
         //---------------------------------------------------------------------
@@ -144,8 +144,8 @@ namespace TestTemporal
         {
             // Workflow entry points methods need to return a Task.
 
-            Assert.Throws<WorkflowTypeException>(() => StubManager.NewWorkflowStub<IErrorNonTaskEntryPointWorkflow1>(client));
-            Assert.Throws<WorkflowTypeException>(() => StubManager.NewWorkflowStub<IErrorNonTaskEntryPointWorkflow2>(client));
+            Assert.Throws<WorkflowException>(() => StubManager.NewWorkflowStub<IErrorNonTaskEntryPointWorkflow1>(client));
+            Assert.Throws<WorkflowException>(() => StubManager.NewWorkflowStub<IErrorNonTaskEntryPointWorkflow2>(client));
         }
 
         //---------------------------------------------------------------------
@@ -165,7 +165,7 @@ namespace TestTemporal
         {
             // Workflow signal methods need to return a Task.
 
-            Assert.Throws<WorkflowTypeException>(() => StubManager.NewWorkflowStub<IErrorNonTaskSignalWorkflow>(client));
+            Assert.Throws<WorkflowException>(() => StubManager.NewWorkflowStub<IErrorNonTaskSignalWorkflow>(client));
         }
 
         //---------------------------------------------------------------------
@@ -186,7 +186,7 @@ namespace TestTemporal
             // Verify that we detect duplicate entrypoint methods
             // with the default name.
 
-            Assert.Throws<WorkflowTypeException>(() => StubManager.NewWorkflowStub<IDuplicateDefaultEntryPointsWorkflow>(client));
+            Assert.Throws<WorkflowException>(() => StubManager.NewWorkflowStub<IDuplicateDefaultEntryPointsWorkflow>(client));
         }
 
         //---------------------------------------------------------------------
@@ -207,7 +207,7 @@ namespace TestTemporal
             // Verify that we detect duplicate entrypoint methods
             // with explicit names.
 
-            Assert.Throws<WorkflowTypeException>(() => StubManager.NewWorkflowStub<IDuplicateEntryPointsWorkflow>(client));
+            Assert.Throws<WorkflowException>(() => StubManager.NewWorkflowStub<IDuplicateEntryPointsWorkflow>(client));
         }
 
         //---------------------------------------------------------------------
@@ -230,7 +230,7 @@ namespace TestTemporal
         {
             // Verify that we detect duplicate signal names.
 
-            Assert.Throws<WorkflowTypeException>(() => StubManager.NewWorkflowStub<IErrorDuplicateSignalsWorkflow>(client));
+            Assert.Throws<WorkflowException>(() => StubManager.NewWorkflowStub<IErrorDuplicateSignalsWorkflow>(client));
         }
 
         //---------------------------------------------------------------------
@@ -250,7 +250,7 @@ namespace TestTemporal
         {
             // Workflow query methods need to return a Task.
 
-            Assert.Throws<WorkflowTypeException>(() => StubManager.NewWorkflowStub<IErrorNonTaskQueryWorkflow>(client));
+            Assert.Throws<WorkflowException>(() => StubManager.NewWorkflowStub<IErrorNonTaskQueryWorkflow>(client));
         }
 
         //---------------------------------------------------------------------
@@ -273,7 +273,7 @@ namespace TestTemporal
         {
             // Verify that we detect duplicate query names.
 
-            Assert.Throws<WorkflowTypeException>(() => StubManager.NewWorkflowStub<IErrorDuplicateQueriesWorkflow>(client));
+            Assert.Throws<WorkflowException>(() => StubManager.NewWorkflowStub<IErrorDuplicateQueriesWorkflow>(client));
         }
     }
 }

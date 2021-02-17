@@ -32,7 +32,7 @@ const (
 	ApplicationError TemporalErrorType = 0
 
 	// CancelledError indicates that an operation was cancelled
-	CancelledError TemporalErrorType = 1
+	CanceledError TemporalErrorType = 1
 
 	// ActivityError returned from workflow when activity returned an error.
 	ActivityError TemporalErrorType = 2
@@ -111,7 +111,7 @@ func NewTemporalError(err error, errTypes ...TemporalErrorType) *TemporalError {
 		errType = errTypes[0]
 	} else {
 		if temporal.IsCanceledError(err) {
-			errType = CancelledError
+			errType = CanceledError
 		} else if temporal.IsApplicationError(err) {
 			errType = ApplicationError
 		} else if temporal.IsPanicError(err) {

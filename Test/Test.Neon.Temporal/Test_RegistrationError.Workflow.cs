@@ -77,7 +77,7 @@ namespace TestTemporal
 
             var worker = await client.NewWorkerAsync();
 
-            await Assert.ThrowsAsync<WorkflowTypeException>(async() => await worker.RegisterWorkflowAsync<WorkflowDuplicateBlankEntrypoint>());
+            await Assert.ThrowsAsync<WorkflowException>(async() => await worker.RegisterWorkflowAsync<WorkflowDuplicateBlankEntrypoint>());
         }
 
         //---------------------------------------------------------------------
@@ -115,7 +115,7 @@ namespace TestTemporal
 
             var worker = await client.NewWorkerAsync();
 
-            await Assert.ThrowsAsync<WorkflowTypeException>(async () => await worker.RegisterWorkflowAsync<WorkflowDuplicateEntrypoint>());
+            await Assert.ThrowsAsync<WorkflowException>(async () => await worker.RegisterWorkflowAsync<WorkflowDuplicateEntrypoint>());
         }
 
         //---------------------------------------------------------------------
@@ -139,7 +139,7 @@ namespace TestTemporal
 
             var worker = await client.NewWorkerAsync();
 
-            await Assert.ThrowsAsync<WorkflowTypeException>(async () => await worker.RegisterWorkflowAsync<WorkflowDuplicateEntrypoint>());
+            await Assert.ThrowsAsync<WorkflowException>(async () => await worker.RegisterWorkflowAsync<WorkflowDuplicateEntrypoint>());
         }
 
         //---------------------------------------------------------------------
@@ -185,7 +185,7 @@ namespace TestTemporal
 
             var worker = await client.NewWorkerAsync();
 
-            await Assert.ThrowsAsync<WorkflowTypeException>(async () => await worker.RegisterWorkflowAsync<WorkflowDuplicateSignal>());
+            await Assert.ThrowsAsync<WorkflowException>(async () => await worker.RegisterWorkflowAsync<WorkflowDuplicateSignal>());
         }
 
         //---------------------------------------------------------------------
@@ -231,7 +231,7 @@ namespace TestTemporal
 
             var worker = await client.NewWorkerAsync();
 
-            await Assert.ThrowsAsync<WorkflowTypeException>(async () => await worker.RegisterWorkflowAsync<WorkflowDuplicateQuery>());
+            await Assert.ThrowsAsync<WorkflowException>(async () => await worker.RegisterWorkflowAsync<WorkflowDuplicateQuery>());
         }
 
         //---------------------------------------------------------------------
@@ -273,7 +273,7 @@ namespace TestTemporal
 
             var worker = await client.NewWorkerAsync();
 
-            await Assert.ThrowsAsync<WorkflowTypeException>(async () => await worker.RegisterWorkflowAsync<WorkflowMultiInterface>());
+            await Assert.ThrowsAsync<WorkflowException>(async () => await worker.RegisterWorkflowAsync<WorkflowMultiInterface>());
         }
     }
 }

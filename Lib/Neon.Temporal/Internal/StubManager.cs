@@ -424,7 +424,7 @@ namespace Neon.Temporal.Internal
         /// <param name="workflowInterface">The workflow interface type.</param>
         /// <param name="isChild">Indicates whether an external or child workflow stub is required.</param>
         /// <returns>The stub instance.</returns>
-        /// <exception cref="WorkflowTypeException">Thrown when there are problems with the <paramref name="workflowInterface"/>.</exception>
+        /// <exception cref="WorkflowException">Thrown when there are problems with the <paramref name="workflowInterface"/>.</exception>
         public static DynamicWorkflowStub GetWorkflowStub(Type workflowInterface, bool isChild)
         {
             Covenant.Requires<ArgumentNullException>(workflowInterface != null, nameof(workflowInterface));
@@ -497,11 +497,11 @@ namespace Neon.Temporal.Internal
 
                 if (attributeCount == 0)
                 {
-                    throw new WorkflowTypeException($"Workflow interface method [{workflowInterface.FullName}.{method.Name}()] must have one of these attributes: [SignalMethod], [QueryMethod], or [WorkflowMethod]");
+                    throw new WorkflowException($"Workflow interface method [{workflowInterface.FullName}.{method.Name}()] must have one of these attributes: [SignalMethod], [QueryMethod], or [WorkflowMethod]");
                 }
                 else if (attributeCount > 1)
                 {
-                    throw new WorkflowTypeException($"Workflow interface method [{workflowInterface.FullName}.{method.Name}()] may only be tagged with one of these attributes: [SignalMethod], [QueryMethod], or [WorkflowMethod]");
+                    throw new WorkflowException($"Workflow interface method [{workflowInterface.FullName}.{method.Name}()] may only be tagged with one of these attributes: [SignalMethod], [QueryMethod], or [WorkflowMethod]");
                 }
 
                 if (signalMethodAttributes.Length > 0)
@@ -514,7 +514,7 @@ namespace Neon.Temporal.Internal
 
                         if (!TemporalHelper.IsTask(method.ReturnType) && !TemporalHelper.IsTaskT(method.ReturnType))
                         {
-                            throw new WorkflowTypeException($"Workflow signal method [{workflowInterface.FullName}.{method.Name}()] does not return a [Task] or a [Task<T>].");
+                            throw new WorkflowException($"Workflow signal method [{workflowInterface.FullName}.{method.Name}()] does not return a [Task] or a [Task<T>].");
                         }
                     }
                     else
@@ -523,13 +523,13 @@ namespace Neon.Temporal.Internal
 
                         if (method.ReturnType.IsGenericType || method.ReturnType != typeof(Task))
                         {
-                            throw new WorkflowTypeException($"Workflow signal method [{workflowInterface.FullName}.{method.Name}()] does not return a [Task].");
+                            throw new WorkflowException($"Workflow signal method [{workflowInterface.FullName}.{method.Name}()] does not return a [Task].");
                         }
                     }
 
                     if (signalNames.Contains(signalAttribute.Name))
                     {
-                        throw new WorkflowTypeException($"Workflow signal method [{workflowInterface.FullName}.{method.Name}()] specifies [SignalMethod(Name = {signalAttribute.Name})] which conflicts with another signal method.");
+                        throw new WorkflowException($"Workflow signal method [{workflowInterface.FullName}.{method.Name}()] specifies [SignalMethod(Name = {signalAttribute.Name})] which conflicts with another signal method.");
                     }
 
                     signalNames.Add(signalAttribute.Name);
@@ -543,12 +543,12 @@ namespace Neon.Temporal.Internal
 
                     if (method.ReturnType != typeof(Task) && method.ReturnType.BaseType != typeof(Task))
                     {
-                        throw new WorkflowTypeException($"Workflow query method [{workflowInterface.FullName}.{method.Name}()] does not return a [Task].");
+                        throw new WorkflowException($"Workflow query method [{workflowInterface.FullName}.{method.Name}()] does not return a [Task].");
                     }
 
                     if (queryTypes.Contains(queryAttribute.Name))
                     {
-                        throw new WorkflowTypeException($"Workflow query method [{workflowInterface.FullName}.{method.Name}()] specifies [QueryMethod(Name = {queryAttribute.Name})] which conflicts with another signal method.");
+                        throw new WorkflowException($"Workflow query method [{workflowInterface.FullName}.{method.Name}()] specifies [QueryMethod(Name = {queryAttribute.Name})] which conflicts with another signal method.");
                     }
 
                     queryTypes.Add(queryAttribute.Name);
@@ -562,7 +562,7 @@ namespace Neon.Temporal.Internal
 
                     if (method.ReturnType != typeof(Task) && method.ReturnType.BaseType != typeof(Task))
                     {
-                        throw new WorkflowTypeException($"Workflow entry point method [{workflowInterface.FullName}.{method.Name}()] does not return a [Task].");
+                        throw new WorkflowException($"Workflow entry point method [{workflowInterface.FullName}.{method.Name}()] does not return a [Task].");
                     }
 
                     details.Kind                    = WorkflowMethodKind.Workflow;
@@ -578,7 +578,7 @@ namespace Neon.Temporal.Internal
 
             if (methodSignatureToDetails.Values.Count(d => d.Kind == WorkflowMethodKind.Workflow) == 0)
             {
-                throw new WorkflowTypeException($"Workflow interface[{workflowInterface.FullName}] does not define a [WorkflowMethod].");
+                throw new WorkflowException($"Workflow interface[{workflowInterface.FullName}] does not define a [WorkflowMethod].");
             }
 
             // Generate C# source code that implements the stub.  Note that stub classes will
@@ -1237,7 +1237,7 @@ namespace Neon.Temporal.Internal
         /// <param name="options">Optionally specifies the workflow options.</param>
         /// <param name="workflowTypeName">Optionally specifies the workflow type name.</param>
         /// <returns>The stub instance.</returns>
-        /// <exception cref="WorkflowTypeException">Thrown when there are problems with the <typeparamref name="TWorkflowInterface"/>.</exception>
+        /// <exception cref="WorkflowException">Thrown when there are problems with the <typeparamref name="TWorkflowInterface"/>.</exception>
         public static TWorkflowInterface NewWorkflowStub<TWorkflowInterface>(TemporalClient client, StartWorkflowOptions options = null, string workflowTypeName = null)
             where TWorkflowInterface : class
         {
@@ -1266,7 +1266,7 @@ namespace Neon.Temporal.Internal
         /// <param name="options">Optionally specifies the workflow options.</param>
         /// <param name="workflowTypeName">Optionally specifies the workflow type name.</param>
         /// <returns>The stub instance.</returns>
-        /// <exception cref="WorkflowTypeException">Thrown when there are problems with the <typeparamref name="TWorkflowInterface"/>.</exception>
+        /// <exception cref="WorkflowException">Thrown when there are problems with the <typeparamref name="TWorkflowInterface"/>.</exception>
         public static TWorkflowInterface NewChildWorkflowStub<TWorkflowInterface>(TemporalClient client, Workflow parentWorkflow, ChildWorkflowOptions options = null, string workflowTypeName = null)
             where TWorkflowInterface : class
         {
@@ -1296,7 +1296,7 @@ namespace Neon.Temporal.Internal
         /// <param name="workflowTypeName">Optionally specifies the workflow type name.</param>
         /// <param name="childExecution">The child execution.</param>
         /// <returns>The stub instance.</returns>
-        /// <exception cref="WorkflowTypeException">Thrown when there are problems with the <typeparamref name="TWorkflowInterface"/>.</exception>
+        /// <exception cref="WorkflowException">Thrown when there are problems with the <typeparamref name="TWorkflowInterface"/>.</exception>
         public static TWorkflowInterface NewChildWorkflowStub<TWorkflowInterface>(TemporalClient client, Workflow parentWorkflow, string workflowTypeName, ChildExecution childExecution)
             where TWorkflowInterface : class
         {
@@ -1328,7 +1328,7 @@ namespace Neon.Temporal.Internal
         /// <param name="workflowId">The child workflow ID.</param>
         /// <param name="namespace">Optionally overrides the parent workflow namespace.</param>
         /// <returns>The stub instance.</returns>
-        /// <exception cref="WorkflowTypeException">Thrown when there are problems with the <typeparamref name="TWorkflowInterface"/>.</exception>
+        /// <exception cref="WorkflowException">Thrown when there are problems with the <typeparamref name="TWorkflowInterface"/>.</exception>
         public static TWorkflowInterface NewChildWorkflowStubById<TWorkflowInterface>(TemporalClient client, Workflow parentWorkflow, string workflowId, string @namespace = null)
             where TWorkflowInterface : class
         {
@@ -1357,7 +1357,7 @@ namespace Neon.Temporal.Internal
         /// <param name="parentWorkflow">The parent workflow.</param>
         /// <param name="execution">The child's external workflow execution.</param>
         /// <returns>The stub instance.</returns>
-        /// <exception cref="WorkflowTypeException">Thrown when there are problems with the <typeparamref name="TWorkflowInterface"/>.</exception>
+        /// <exception cref="WorkflowException">Thrown when there are problems with the <typeparamref name="TWorkflowInterface"/>.</exception>
         public static TWorkflowInterface NewChildWorkflowStubById<TWorkflowInterface>(TemporalClient client, Workflow parentWorkflow, WorkflowExecution execution)
             where TWorkflowInterface : class
         {
@@ -1382,7 +1382,7 @@ namespace Neon.Temporal.Internal
         /// <param name="client">The associated <see cref="TemporalClient"/>.</param>
         /// <param name="options">Optionally continuation options.</param>
         /// <returns>The stub instance.</returns>
-        /// <exception cref="WorkflowTypeException">Thrown when there are problems with the <typeparamref name="TWorkflowInterface"/>.</exception>
+        /// <exception cref="WorkflowException">Thrown when there are problems with the <typeparamref name="TWorkflowInterface"/>.</exception>
         public static TWorkflowInterface NewContinueAsNewStub<TWorkflowInterface>(TemporalClient client, ContinueAsNewOptions options = null)
             where TWorkflowInterface : class
         {
