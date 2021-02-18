@@ -26,49 +26,43 @@ namespace Neon.Temporal
     /// <summary>
     /// Base class for all Temporal related exceptions.
     /// </summary>
-    public abstract class TemporalException : Exception
+    public abstract class TemporalException
     {
-        private string reason;
-
+        private readonly string message;
+        private readonly Exception innerException;
         /// <summary>
         /// Constructor.
         /// </summary>
         /// <param name="message">Optionally specifies a message.</param>
         /// <param name="innerException">Optionally specifies the inner exception.</param>
         public TemporalException(string message = null, Exception innerException = null)
-            : base(message, innerException)
         {
+            this.message        = message;
+            this.innerException = innerException;
         }
 
-        /// <summary>
-        /// Returns the Temporal GOLANG client's error string corresponding to the
-        /// exception or <c>null</c> when the exception does not map to an
-        /// error string.
-        /// </summary>
-        internal virtual string TemporalError => null;
+        public string Message => message;
+        public Exception InnerException => innerException;
 
-        /// <summary>
-        /// Returns the Temporal error type.
-        /// </summary>
-        internal abstract TemporalErrorType TemporalErrorType { get; }
+        ///// <summary>
+        ///// Returns the Temporal GOLANG client's error string corresponding to the
+        ///// exception or <c>null</c> when the exception does not map to an
+        ///// error string.
+        ///// </summary>
+        //internal virtual string TemporalError => null;
 
-        /// <summary>
-        /// The Temporal error reason used for specifying non-retryable errors
-        /// within a <see cref="RetryPolicy"/> instance.
-        /// </summary>
-        internal string Reason
-        {
-            get => reason ?? TemporalError;
-            set => reason = value;
-        }
+        ///// <summary>
+        ///// Returns the Temporal error type.
+        ///// </summary>
+        //internal abstract TemporalErrorType TemporalErrorType { get; }
 
-        /// <summary>
-        /// Converts the exception into a <see cref="TemporalError"/>.
-        /// </summary>
-        /// <returns>The <see cref="TemporalError"/>.</returns>
-        internal virtual TemporalError ToTemporalError()
-        {
-            return new TemporalError($"{Reason}{{{Message}}}", TemporalErrorType);
-        }
+        ///// <summary>
+        ///// Converts the exception into a <see cref="TemporalError"/>.
+        ///// </summary>
+        ///// <returns>The <see cref="TemporalError"/>.</returns>
+        //internal virtual TemporalError ToTemporalError()
+        //{
+        //    return new TemporalError($"{Message}", TemporalErrorType);
+        //}
     }
 }

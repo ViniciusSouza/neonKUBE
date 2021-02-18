@@ -11,25 +11,19 @@ namespace Neon.Temporal
     /// </summary>
     public class TemporalFailure : TemporalException
     {
-        private TemporalErrorType temporalErrorType;
-
         /// <summary>
         /// Constructor.
         /// </summary>
         /// <param name="message">Optionally specifies a message.</param>
         /// <param name="innerException">Optionally specifies the inner exception.</param>
-        public TemporalFailure(
-            string            originalMessage = null,
-            string            message         = null, 
-            TemporalException innerException  = null)
+        public TemporalFailure(string message = null, Exception innerException = null)
             : base(message, innerException)
         {
-            this.OriginalMessage   = originalMessage;
-            this.temporalErrorType = innerException.TemporalErrorType;
         }
 
-        internal override TemporalErrorType TemporalErrorType => TemporalErrorType;
-
-        public string OriginalMessage { get; }
+        /// <summary>
+        /// Returns the message that caused the original failure.
+        /// </summary>
+        public string OriginalMessage => InnerException.Message;
     }
 }
