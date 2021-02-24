@@ -462,7 +462,7 @@ service ntp restart
 $@"
 127.0.0.1	    localhost
 127.0.0.1       kubernetes-masters
-{nodeAddress}{separator}{Name}
+{nodeAddress}{separator}{Name}{separator}{KubeConst.ClusterRegistry}
 ::1             localhost ip6-localhost ip6-loopback
 ff02::1         ip6-allnodes
 ff02::2         ip6-allrouters
@@ -678,6 +678,12 @@ service kubelet restart
                     {
                         foreach (var value in values)
                         {
+                            if (value.Value == null)
+                            {
+                                valueOverrides.AppendWithSeparator($"--set {value.Key}=null");
+                                continue;
+                            }
+
                             var valueType = value.Value.GetType();
 
                             if (valueType == typeof(string))

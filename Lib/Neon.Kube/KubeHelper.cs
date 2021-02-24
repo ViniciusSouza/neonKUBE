@@ -334,25 +334,6 @@ namespace Neon.Kube
         }
 
         /// <summary>
-        /// Encrypts a file or directory when supported by the underlying operating system
-        /// and file system.  Currently, this only works on non-HOME versions of Windows
-        /// and NTFS file systems.  This fails silently.
-        /// </summary>
-        /// <param name="path">The file or directory path.</param>
-        /// <returns><c>true</c> if the operation was successful.</returns>
-        private static bool EncryptFile(string path)
-        {
-            try
-            {
-                return Win32.EncryptFile(path);
-            }
-            catch
-            {
-                return false;
-            }
-        }
-
-        /// <summary>
         /// Ensures that sensitive folders and files on the local workstation are encrypted at rest
         /// for security purposes.  These include the users <b>.kube</b>, <b>.neonkube</b>, and any
         /// the <b>OpenVPN</b> if it exists.
@@ -374,7 +355,7 @@ namespace Neon.Kube
                 {
                     if (Directory.Exists(sensitiveFolder))
                     {
-                        KubeHelper.EncryptFile(sensitiveFolder);
+                        NeonHelper.EncryptFile(sensitiveFolder);
                     }
                 }
             }
@@ -455,6 +436,26 @@ namespace Neon.Kube
         }
 
         /// <summary>
+        /// Determines whether a cluster hosting environment is available only for neonFORGE
+        /// enterprise (closed-source) related projects.
+        /// </summary>
+        /// <param name="hostingEnvironment">The hosting environment.</param>
+        /// <returns><c>true</c> for enteprise/closed-source related projects.</returns>
+        public static bool IsEnterpriseEnvironment(HostingEnvironment hostingEnvironment)
+        {
+            switch (hostingEnvironment)
+            {
+                case HostingEnvironment.Wsl2:
+
+                    return true;
+
+                default:
+
+                    return false;
+            }
+        }
+
+        /// <summary>
         /// Determines whether a cluster hosting environment deploys on-premise.
         /// </summary>
         /// <param name="hostingEnvironment">The hosting environment.</param>
@@ -462,6 +463,25 @@ namespace Neon.Kube
         public static bool IsOnPremiseEnvironment(HostingEnvironment hostingEnvironment)
         {
             return !IsCloudEnvironment(hostingEnvironment);
+        }
+
+        /// <summary>
+        /// Determines whether a cluster hosting environment deploys to on-premise hypervisors.
+        /// </summary>
+        /// <param name="hostingEnvironment">The hosting environment.</param>
+        /// <returns><c>true</c> for on-premise environments.</returns>
+        /// <remarks>
+        /// <note>
+        /// Although <see cref="HostingEnvironment.Wsl2"/> is technically hosted on the Windows
+        /// Hyper-V platform, we're not going to consider it to be hosted by a hypervisor because
+        /// it's a special case.
+        /// </note>
+        /// </remarks>
+        public static bool IsOnPremiseHypervisorEnvironment(HostingEnvironment hostingEnvironment)
+        {
+            return hostingEnvironment == HostingEnvironment.HyperV ||
+                   hostingEnvironment == HostingEnvironment.HyperVLocal ||
+                   hostingEnvironment == HostingEnvironment.XenServer;
         }
 
         /// <summary>
@@ -508,7 +528,7 @@ namespace Neon.Kube
 
                 try
                 {
-                    EncryptFile(path);
+                    NeonHelper.EncryptFile(path);
                 }
                 catch
                 {
@@ -573,16 +593,7 @@ namespace Neon.Kube
                 var path = Path.Combine(Environment.GetEnvironmentVariable("USERPROFILE"), ".kube");
 
                 Directory.CreateDirectory(path);
-
-                try
-                {
-                    EncryptFile(path);
-                }
-                catch
-                {
-                    // Encryption is not available on all platforms (e.g. Windows Home, or non-NTFS
-                    // file systems).  The secrets won't be encrypted for these situations.
-                }
+                NeonHelper.EncryptFile(path);
 
                 return cachedKubeUserFolder = path;
             }
@@ -1160,6 +1171,105 @@ namespace Neon.Kube
                 var clientCert  = tlsCert.ToX509();
 
                 return null;
+            }
+        }
+
+        /// <summary>
+        /// Generates a self-signed certificate for arbitrary hostnames, possibly including 
+        /// hostnames with wildcards.
+        /// </summary>
+        /// <param name="hostname">
+        /// <para>
+        /// The certificate host names.
+        /// </para>
+        /// <note>
+        /// You can use include a <b>"*"</b> to specify a wildcard
+        /// certificate like: <b>*.test.com</b>.
+        /// </note>
+        /// </param>
+        /// <param name="bitCount">The certificate key size in bits: one of <b>1024</b>, <b>2048</b>, or <b>4096</b> (defaults to <b>2048</b>).</param>
+        /// <param name="validDays">
+        /// The number of days the certificate will be valid.  This defaults to 365,000 days
+        /// or about 1,000 years.
+        /// </param>
+        /// <param name="wildcard">
+        /// Optionally generate a wildcard certificate for the subdomains of 
+        /// <paramref name="hostname"/> or the combination of the subdomains
+        /// and the hostname.  This defaults to <see cref="Wildcard.None"/>
+        /// which does not generate a wildcard certificate.
+        /// </param>
+        /// <param name="issuedBy">Optionally specifies the issuer.</param>
+        /// <param name="issuedTo">Optionally specifies who/what the certificate is issued for.</param>
+        /// <param name="friendlyName">Optionally specifies the certificate's frendly name.</param>
+        /// <returns>The new <see cref="TlsCertificate"/>.</returns>
+        public static X509Certificate2 CreateSelfSigned(
+            string      hostname,
+            int         bitCount     = 2048,
+            int         validDays    = 365000,
+            Wildcard    wildcard     = Wildcard.None,
+            string      issuedBy     = null,
+            string      issuedTo     = null, 
+            string      friendlyName = null)
+        {
+            Covenant.Requires<ArgumentException>(!string.IsNullOrEmpty(hostname), nameof(hostname));
+            Covenant.Requires<ArgumentException>(bitCount == 1024 || bitCount == 2048 || bitCount == 4096, nameof(bitCount));
+            Covenant.Requires<ArgumentException>(validDays > 1, nameof(validDays));
+
+            if (string.IsNullOrEmpty(issuedBy))
+            {
+                issuedBy = ".";
+            }
+
+            if (string.IsNullOrEmpty(issuedTo))
+            {
+                issuedTo = hostname;
+            }
+
+            var sanBuilder = new SubjectAlternativeNameBuilder();
+
+            switch (wildcard)
+            {
+                case Wildcard.None:
+
+                    sanBuilder.AddDnsName(hostname);
+                    break;
+
+                case Wildcard.SubdomainsOnly:
+
+                    hostname = $"*.{hostname}";
+                    sanBuilder.AddDnsName(hostname);
+                    break;
+
+                case Wildcard.RootAndSubdomains:
+
+                    sanBuilder.AddDnsName(hostname);
+                    sanBuilder.AddDnsName($"*.{hostname}");
+                    break;
+            }
+
+            X500DistinguishedName distinguishedName = new X500DistinguishedName($"CN={hostname}");
+
+            using (RSA rsa = RSA.Create(bitCount))
+            {
+                var request = new CertificateRequest(distinguishedName, rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+
+                request.CertificateExtensions.Add(
+                    new X509KeyUsageExtension(X509KeyUsageFlags.KeyEncipherment 
+                    | X509KeyUsageFlags.CrlSign | X509KeyUsageFlags.KeyCertSign 
+                    | X509KeyUsageFlags.DigitalSignature, true));
+
+                request.CertificateExtensions.Add(
+                        new X509BasicConstraintsExtension(true, false, 0, true));
+
+                request.CertificateExtensions.Add(
+                        new X509SubjectKeyIdentifierExtension());
+
+                request.CertificateExtensions.Add(sanBuilder.Build());
+
+                var certificate          = request.CreateSelfSigned(new DateTimeOffset(DateTime.UtcNow.AddDays(-1)), new DateTimeOffset(DateTime.UtcNow.AddDays(validDays)));
+                certificate.FriendlyName = friendlyName;
+
+                return certificate;
             }
         }
 
@@ -2185,9 +2295,12 @@ exit 0
                     node.OpenEBS = true;
                 }
 
-                foreach (var node in clusterDefinition.SortedMasterNodes.Take(3 - clusterDefinition.Workers.Count()))
+                if (clusterDefinition.Kubernetes.AllowPodsOnMasters.Value == true)
                 {
-                    node.OpenEBS = true;
+                    foreach (var node in clusterDefinition.SortedMasterNodes.Take(3 - clusterDefinition.Workers.Count()))
+                    {
+                        node.OpenEBS = true;
+                    }
                 }
             }
         }

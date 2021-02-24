@@ -21,8 +21,6 @@
 #
 # NOTE: This is script works only for maintainers with proper credentials.
 
-$ErrorActionPreference = "Stop"
-
 # Import the global project include file.
 
 . $env:NF_ROOT/Powershell/includes.ps1
@@ -92,7 +90,10 @@ function SetVersion
     $orgVersion     = $match.Groups[1].Value
     $tmpProjectFile = $orgProjectFile.Replace("<Version>$orgVersion</Version>", "<Version>$version</Version>")
 
-    Copy-Item "$projectPath" "$projectPath.bak"
+    if (!(Test-Path "$projectPath.bak"))
+    {
+        Copy-Item "$projectPath" "$projectPath.bak"
+    }
     
     $tmpProjectFile | Out-File -FilePath "$projectPath" -Encoding utf8
 }
@@ -135,7 +136,10 @@ function Publish
     $projectPath = [io.path]::combine($env:NF_ROOT, "Lib", "$project", "$project" + ".csproj")
 
     dotnet pack $projectPath  -c Debug --include-symbols --include-source -o "$env:NF_BUILD\nuget"
+    ThrowOnExitCode
+
     nuget push -Source $env:NC_NUGET_DEVFEED "$env:NF_BUILD\nuget\$project.$version.nupkg"
+    ThrowOnExitCode
    
     # NOTE: We're not doing this because including source and symbols above because
     # doesn't seem to to work.
@@ -190,6 +194,7 @@ SetVersion Neon.Docker              $libraryVersion
 SetVersion Neon.HyperV              $libraryVersion
 SetVersion Neon.Service             $libraryVersion
 SetVersion Neon.ModelGen            $libraryVersion
+SetVersion Neon.ModelGenerator      $libraryVersion
 SetVersion Neon.Nats                $libraryVersion
 SetVersion Neon.Postgres            $libraryVersion
 SetVersion Neon.SSH                 $libraryVersion
@@ -212,7 +217,7 @@ SetVersion Neon.Kube.Google         $kubeVersion
 SetVersion Neon.Kube.Hosting        $kubeVersion
 SetVersion Neon.Kube.HyperV         $kubeVersion
 SetVersion Neon.Kube.HyperVLocal    $kubeVersion
-SetVersion Neon.Kube.Wsl2           $kubeVersion
+SetVersion Neon.Kube.Services       $kubeVersion
 SetVersion Neon.Kube.XenServer      $kubeVersion
 SetVersion Neon.Kube.Xunit          $kubeVersion
 
@@ -227,6 +232,7 @@ Publish Neon.Docker                 $libraryVersion
 Publish Neon.HyperV                 $libraryVersion
 Publish Neon.Service                $libraryVersion
 Publish Neon.ModelGen               $libraryVersion
+Publish Neon.ModelGenerator         $libraryVersion
 Publish Neon.Nats                   $libraryVersion
 Publish Neon.Postgres               $libraryVersion
 Publish Neon.SSH                    $libraryVersion
@@ -249,48 +255,48 @@ Publish Neon.Kube.Google            $kubeVersion
 Publish Neon.Kube.Hosting           $kubeVersion
 Publish Neon.Kube.HyperV            $kubeVersion
 Publish Neon.Kube.HyperVLocal       $kubeVersion
-Publish Neon.Kube.Wsl2              $kubeVersion
+Publish Neon.Kube.Services          $kubeVersion
 Publish Neon.Kube.XenServer         $kubeVersion
 Publish Neon.Kube.Xunit             $kubeVersion
 
 # Restore the project versions
 
-RestoreVersion Neon.Cadence             
-RestoreVersion Neon.Cassandra           
-RestoreVersion Neon.Common              
-RestoreVersion Neon.Couchbase           
-RestoreVersion Neon.Cryptography        
-RestoreVersion Neon.Docker              
-RestoreVersion Neon.HyperV              
-RestoreVersion Neon.Service             
-RestoreVersion Neon.ModelGen            
-RestoreVersion Neon.Nats                
-RestoreVersion Neon.Postgres            
-RestoreVersion Neon.SSH                 
-RestoreVersion Neon.SSH.NET             
-RestoreVersion Neon.Temporal            
-RestoreVersion Neon.Web                 
-RestoreVersion Neon.XenServer           
-RestoreVersion Neon.Xunit               
-RestoreVersion Neon.Xunit.Cadence       
-RestoreVersion Neon.Xunit.Couchbase     
-RestoreVersion Neon.Xunit.Temporal      
-RestoreVersion Neon.Xunit.YugaByte      
-RestoreVersion Neon.YugaByte            
+RestoreVersion Neon.Cadence
+RestoreVersion Neon.Cassandra
+RestoreVersion Neon.Common
+RestoreVersion Neon.Couchbase
+RestoreVersion Neon.Cryptography
+RestoreVersion Neon.Docker
+RestoreVersion Neon.HyperV
+RestoreVersion Neon.Service
+RestoreVersion Neon.ModelGen
+RestoreVersion Neon.ModelGenerator
+RestoreVersion Neon.Nats
+RestoreVersion Neon.Postgres
+RestoreVersion Neon.SSH
+RestoreVersion Neon.SSH.NET
+RestoreVersion Neon.Temporal
+RestoreVersion Neon.Web
+RestoreVersion Neon.XenServer
+RestoreVersion Neon.Xunit
+RestoreVersion Neon.Xunit.Cadence
+RestoreVersion Neon.Xunit.Couchbase
+RestoreVersion Neon.Xunit.Temporal
+RestoreVersion Neon.Xunit.YugaByte
+RestoreVersion Neon.YugaByte
 
-RestoreVersion Neon.Kube                
-RestoreVersion Neon.Kube.Aws            
-RestoreVersion Neon.Kube.Azure          
-RestoreVersion Neon.Kube.BareMetal      
-RestoreVersion Neon.Kube.Google         
-RestoreVersion Neon.Kube.Hosting        
-RestoreVersion Neon.Kube.HyperV         
-RestoreVersion Neon.Kube.HyperVLocal    
-RestoreVersion Neon.Kube.Wsl2      
-RestoreVersion Neon.Kube.XenServer      
-RestoreVersion Neon.Kube.Xunit          
+RestoreVersion Neon.Kube
+RestoreVersion Neon.Kube.Aws
+RestoreVersion Neon.Kube.Azure
+RestoreVersion Neon.Kube.BareMetal
+RestoreVersion Neon.Kube.Google
+RestoreVersion Neon.Kube.Hosting
+RestoreVersion Neon.Kube.HyperV
+RestoreVersion Neon.Kube.HyperVLocal
+RestoreVersion Neon.Kube.Services
+RestoreVersion Neon.Kube.XenServer
+RestoreVersion Neon.Kube.Xunit
 
 ""
 "** Package publication completed"
 ""
-pause

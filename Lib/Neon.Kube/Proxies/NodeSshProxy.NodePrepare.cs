@@ -272,8 +272,8 @@ systemctl restart rsyslog.service
                 () =>
                 {
                     NodeInstallTools(setupState);
-                    BaseConfigureApt(clusterDefinition.NodeOptions.PackageManagerRetries, clusterDefinition.NodeOptions.AllowPackageManagerIPv6);
-                    BaseConfigureOpenSsh(setupState);
+                    BaseConfigureApt(hostingManager.HostingEnvironment, clusterDefinition.NodeOptions.PackageManagerRetries, clusterDefinition.NodeOptions.AllowPackageManagerIPv6);
+                    BaseConfigureOpenSsh(hostingManager.HostingEnvironment);
                     DisableSnap(setupState);
                     ConfigureJournald(setupState);
                     ConfigureNFS();
@@ -440,6 +440,9 @@ DefaultLimitMEMLOCK = infinity
 EOF
 
 chmod 664 /etc/systemd/user.conf.d/50-neonkube.conf
+cp /etc/systemd/user.conf.d/50-neonkube.conf /etc/systemd/system.conf
+
+echo ""session required pam_limits.so"" >> /etc/pam.d/common-session
 
 #------------------------------------------------------------------------------
 # Tweak some kernel settings.  I extracted this file from a clean Ubuntu install
@@ -533,6 +536,11 @@ fs.file-max = 1048576
 
 # We'll allow processes to open the same number of file handles.
 fs.nr_open = 1048576
+
+# podman specific entries
+fs.inotify.max_queued_events = 1048576
+fs.inotify.max_user_instances = 1048576
+fs.inotify.max_user_watches = 1048576
 
 ###################################################################
 # Boost the number of RAM pages a process can map as well as increasing 
@@ -902,7 +910,7 @@ systemctl daemon-reload
 
             using (var ms = new MemoryStream())
             {
-                KubeHelper.WriteStatus(statusWriter, "Install", "Helm Charts (archive)");
+                KubeHelper.WriteStatus(statusWriter, "Install", "Helm Charts (zip)");
                 Status = "install: helm charts (archive)";
 
                 var helmFolder = KubeHelper.Resources.GetDirectory("/Helm");    // $hack(jefflill): https://github.com/nforgeio/neonKUBE/issues/1121
@@ -998,7 +1006,7 @@ curl {KubeHelper.CurlOptions} https://download.opensuse.org/repositories/devel:k
 
 # Generate the CRI-O configurations.
 
-NEON_REGISTRY={NeonHelper.NeonLibraryBranchRegistry}
+NEON_REGISTRY={KubeConst.ClusterRegistry}
 
 cat <<EOF > /etc/containers/registries.conf
 unqualified-search-registries = [ ""docker.io"", ""quay.io"", ""registry.access.redhat.com"", ""registry.fedoraproject.org"" ]
@@ -1007,10 +1015,7 @@ unqualified-search-registries = [ ""docker.io"", ""quay.io"", ""registry.access.
 prefix = ""${{NEON_REGISTRY}}""
 insecure = false
 blocked = false
-location = ""${{NEON_REGISTRY}}""
-
-[[registry.mirror]]
-location = ""{KubeConst.ClusterRegistryName}""
+location = ""${{NEON_REGISTRY}}/{KubeConst.ClusterRegistryProjectName}""
 
 [[registry]]
 prefix = ""docker.io""
@@ -1157,7 +1162,7 @@ EOF
 
 chmod 744 /etc/sysctl.d/990-wsl-no-ipv6 
 
-sysctl --system
+sysctl -p /etc/sysctl.d/990-wsl2-no-ipv6
 ";
                         SudoCommand(CommandBundle.FromScript(confScript), RunOptions.FaultOnError);
                     }

@@ -518,7 +518,7 @@ namespace Neon.Kube
 
         /// <summary>
         /// Used to tag VM instances resources with the external SSH port to be used to 
-        /// establish an SSH connection to the instance.
+        /// establish a SSH connection to the instance.
         /// </summary>
         private const string neonNodeSshTagKey = neonTagKeyPrefix + "node.ssh-port";
 
@@ -1147,7 +1147,7 @@ namespace Neon.Kube
             setupController.AddNodeStep("node basics",
                 (state, node) =>
                 {
-                    node.BaseInitialize(secureSshPassword);
+                    node.BaseInitialize(HostingEnvironment, secureSshPassword);
                 });
 
             // We need to add any required OpenEBS cStor disks after the node has been otherwise
@@ -2762,7 +2762,7 @@ namespace Neon.Kube
                 // Create the instance in the node subnet.
                 //
                 // Note that AWS does not support starting new instances with a specific
-                // SSH password by default; they use an SSH key instead.  We also want
+                // SSH password by default; they use a SSH key instead.  We also want
                 // to rename the default [ubuntu] user to our standard [sysadmin].
                 //
                 // I'm going to address this by passing a first boot script as user-data

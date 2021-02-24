@@ -22,7 +22,7 @@ namespace Neon.Common
 {
     /// <summary>
     /// Holds the process exit code and captured standard output from a process
-    /// launched by <see cref="NeonHelper.ExecuteCapture(string, string, TimeSpan?, Process, Action{string}, Action{string})"/>.
+    /// launched by <see cref="NeonHelper.ExecuteCapture(string, string, TimeSpan?, Process, string, Action{string}, Action{string})"/>.
     /// </summary>
     public class ExecuteResponse
     {
@@ -59,8 +59,9 @@ namespace Neon.Common
         /// <summary>
         /// Ensure that the command returned a zero exit code.
         /// </summary>
+        /// <returns>The response for fluent-style chaining.</returns>
         /// <exception cref="ExecuteException">Thrown if the exit code isn't zero.</exception>
-        public void EnsureSuccess()
+        public ExecuteResponse EnsureSuccess()
         {
             if (ExitCode != 0)
             {
@@ -76,6 +77,8 @@ namespace Neon.Common
                     throw new ExecuteException(ExitCode, OutputText);
                 }
             }
+
+            return this;
         }
     }
 }

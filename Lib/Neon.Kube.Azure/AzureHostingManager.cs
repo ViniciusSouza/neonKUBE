@@ -406,7 +406,7 @@ namespace Neon.Kube
 
         /// <summary>
         /// Used to tag instances resources with the external SSH port to be used to 
-        /// establish an SSH connection to the instance.
+        /// establish a SSH connection to the instance.
         /// </summary>
         private const string neonNodeSshPortTagKey = neonTagKeyPrefix + "node.ssh-port";
 
@@ -988,7 +988,7 @@ namespace Neon.Kube
             setupController.AddNodeStep("node basics",
                 (state, node) =>
                 {
-                    node.BaseInitialize(secureSshPassword);
+                    node.BaseInitialize(HostingEnvironment, secureSshPassword);
                 });
 
             // We need to add any required OpenEBS cStor disks after the node has been otherwise
