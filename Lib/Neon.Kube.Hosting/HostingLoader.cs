@@ -104,6 +104,15 @@ namespace Neon.Kube
                 HyperVLocalHostingManager.Load();
                 XenServerHostingManager.Load();
 
+                // For enterprise releases, load any additional enterprise-only hosting managers.
+
+                var enterpriseHelper = NeonHelper.ServiceContainer.GetService<IEnterpriseHelper>();
+
+                if (enterpriseHelper != null)
+                {
+                    enterpriseHelper.LoadHostingManagers();
+                }
+
                 // We're going to reflect all loaded assemblies for classes that implement
                 // [IHostingManager] and are decorated with an [HostingProviderAttribute],
                 // end then use the environment specified in the attributes to determine
@@ -139,6 +148,11 @@ namespace Neon.Kube
             }
         }
 
+        /// <summary>
+        /// Returns <c>true</c> when the loader has already been initialized.
+        /// </summary>
+        public static bool IsIntialized => HostingLoader.environmentToHostingManager != null;
+
         //---------------------------------------------------------------------
         // Instance members
 
@@ -151,12 +165,19 @@ namespace Neon.Kube
         /// <inheritdoc/>
         public HostingManager GetManager(HostingEnvironment environment)
         {
-            if (!environmentToHostingManager.TryGetValue(environment, out var managerType))
+            if (environmentToHostingManager.TryGetValue(environment, out var managerType))
+            {
+                return (HostingManager)Activator.CreateInstance(managerType);
+            }
+
+            var enterpriseHelper = NeonHelper.ServiceContainer.GetService<IEnterpriseHelper>();
+
+            if (enterpriseHelper == null)
             {
                 return null;
             }
 
-            return (HostingManager)Activator.CreateInstance(managerType);
+            return enterpriseHelper.GetHostingManager(environment);
         }
 
         /// <inheritdoc/>
@@ -165,12 +186,19 @@ namespace Neon.Kube
             Covenant.Requires<ArgumentNullException>(cluster != null, nameof(cluster));
             Covenant.Assert(environmentToHostingManager != null, $"[{nameof(HostingLoader)}] is not initialized.  You must call [{nameof(HostingLoader)}.{nameof(HostingLoader.Initialize)}()] first.");
 
-            if (!environmentToHostingManager.TryGetValue(cluster.Definition.Hosting.Environment, out var managerType))
+            if (environmentToHostingManager.TryGetValue(cluster.Definition.Hosting.Environment, out var managerType))
+            {
+                return (HostingManager)Activator.CreateInstance(managerType, cluster, logFolder);
+            }
+
+            var enterpriseHelper = NeonHelper.ServiceContainer.GetService<IEnterpriseHelper>();
+
+            if (enterpriseHelper == null)
             {
                 return null;
             }
 
-            return (HostingManager)Activator.CreateInstance(managerType, cluster, logFolder);
+            return enterpriseHelper.GetHostingManager(cluster, logFolder);
         }
     }
 }

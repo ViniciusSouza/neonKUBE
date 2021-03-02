@@ -17,10 +17,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using Neon.Collections;
 using Neon.Common;
 using Neon.Net;
 
@@ -87,39 +89,91 @@ namespace Neon.Kube
         public static readonly string IstioLinuxUri = $"https://github.com/istio/istio/releases/download/{KubeVersions.IstioVersion}/istioctl-{KubeVersions.IstioVersion}-linux-amd64.tar.gz";
 
         /// <summary>
+        /// The HTTPS URI to the public AWS S3 bucket where we persist cluster VM images 
+        /// and perhaps other things.
+        /// </summary>
+        public const string NeonPublicBucketUri = "https://neon-public.s3-us-west-2.amazonaws.com";
+
+        /// <summary>
         /// <para>
-        /// Returns the URI to be used for downloading the prepared neonKUBE virtual machine image 
+        /// Returns the HTTPS URI to be used for downloading the prepared neonKUBE virtual machine image 
         /// for the current neonKUBE cluster version.
         /// </para>
+        /// <note>
+        /// The HTTPS URI returned may be converted into an S3 URI via <see cref="NetHelper.ToAwsS3Uri(string)"/>.
+        /// </note>
         /// <note>
         /// This will return <c>null</c> for cloud and bare metal environments because we don't
         /// download images for those situations.
         /// </note>
         /// </summary>
-        /// <param name="hostingEnvironment"></param>
-        /// <returns>The dornload URI or <c>null</c>.</returns>
-        public static string GetNodeImageUri(HostingEnvironment hostingEnvironment)
+        /// <param name="hostingEnvironment">Specifies the hosting environment.</param>
+        /// <param name="setupState">Holds the cluster prepare/setup state.</param>
+        /// <returns>The download URI or <c>null</c>.</returns>
+        public static string GetNodeImageUri(HostingEnvironment hostingEnvironment, ObjectDictionary setupState)
         {
+            Covenant.Requires<ArgumentNullException>(setupState != null, nameof(setupState));
+
+            var setupDebugMode = setupState.Get<bool>(KubeSetup.DebugModeProperty, false);
+            var baseImageName  = setupState.Get<string>(KubeSetup.BaseImageNameProperty, null);
+
+            if (setupDebugMode && string.IsNullOrEmpty(baseImageName))
+            {
+                throw new NotSupportedException($"[{nameof(setupState)}] must include [{KubeSetup.BaseImageNameProperty}] when [{KubeSetup.DebugModeProperty}=true].");
+            }
+
+            var imageType = setupDebugMode ? "base" : "node";
+
             switch (hostingEnvironment)
             {
+                case HostingEnvironment.BareMetal:
+
+                    throw new NotImplementedException("Cluster setup on bare-metal is not supported yet.");
+
                 case HostingEnvironment.Aws:
                 case HostingEnvironment.Azure:
                 case HostingEnvironment.Google:
+
+                    if (setupDebugMode)
+                    {
+                        throw new NotSupportedException("Cluster setup debug mode is not supported for cloud environments.");
+                    }
 
                     return null;
 
                 case HostingEnvironment.HyperV:
                 case HostingEnvironment.HyperVLocal:
 
-                    return $"https://neonkube.s3-us-west-2.amazonaws.com/images/hyperv/node/neonkube.{KubeVersions.NeonKubeVersion}.vhdx";
+                    if (setupDebugMode)
+                    {
+                        return $"{NeonPublicBucketUri}/vm-images/hyperv/base/{baseImageName}";
+                    }
+                    else
+                    {
+                        return $"{NeonPublicBucketUri}/vm-images/hyperv/node/neonkube-{KubeVersions.NeonKubeVersion}.hyperv.vhdx";
+                    }
 
                 case HostingEnvironment.XenServer:
 
-                    return $"https://neonkube.s3-us-west-2.amazonaws.com/images/xenserver/node/neonkube.{KubeVersions.NeonKubeVersion}.xva";
+                    if (setupDebugMode)
+                    {
+                        return $"{NeonPublicBucketUri}/vm-images/xenserver/base/{baseImageName}";
+                    }
+                    else
+                    {
+                        return $"{NeonPublicBucketUri}/vm-images/xenserver/node/neonkube-{KubeVersions.NeonKubeVersion}.xenserver.xva";
+                    }
 
                 case HostingEnvironment.Wsl2:
 
-                    return $"https://neonkube.s3-us-west-2.amazonaws.com/images/wsl2/node/neonkube.{KubeVersions.NeonKubeVersion}.tar";
+                    if (setupDebugMode)
+                    {
+                        return $"{NeonPublicBucketUri}/vm-images/wsl2/base/{baseImageName}";
+                    }
+                    else
+                    {
+                        return $"{NeonPublicBucketUri}/vm-images/wsl2/node/neonkube-{KubeVersions.NeonKubeVersion}.wsl2.tar";
+                    }
 
                 default:
 

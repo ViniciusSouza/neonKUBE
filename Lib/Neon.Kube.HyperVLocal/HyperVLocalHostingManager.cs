@@ -36,6 +36,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using YamlDotNet.Serialization;
 
+using Neon.Collections;
 using Neon.Common;
 using Neon.Cryptography;
 using Neon.HyperV;
@@ -71,6 +72,7 @@ namespace Neon.Kube
         private const string defaultSwitchName = "external";
 
         private ClusterProxy                    cluster;
+        private ObjectDictionary                setupState;
         private SetupController<NodeDefinition> setupController;
         private string                          driveTemplatePath;
         private string                          vmDriveFolder;
@@ -113,10 +115,7 @@ namespace Neon.Kube
         }
 
         /// <inheritdoc/>
-        public override bool IsProvisionNOP
-        {
-            get { return false; }
-        }
+        public override bool IsProvisionNOP => false;
 
         /// <inheritdoc/>
         public override HostingEnvironment HostingEnvironment => HostingEnvironment.HyperVLocal;
@@ -128,13 +127,15 @@ namespace Neon.Kube
         }
 
         /// <inheritdoc/>
-        public override async Task<bool> ProvisionAsync(ClusterLogin clusterLogin, string secureSshPassword, string orgSshPassword = null)
+        public override async Task<bool> ProvisionAsync(ClusterLogin clusterLogin, ObjectDictionary setupState, string secureSshPassword, string orgSshPassword = null)
         {
             Covenant.Requires<ArgumentNullException>(clusterLogin != null, nameof(clusterLogin));
+            Covenant.Requires<ArgumentNullException>(setupState != null, nameof(setupState));
             Covenant.Requires<ArgumentNullException>(!string.IsNullOrEmpty(secureSshPassword), nameof(secureSshPassword));
             Covenant.Requires<ArgumentNullException>(!string.IsNullOrEmpty(orgSshPassword), nameof(orgSshPassword));
             Covenant.Assert(cluster != null, $"[{nameof(HyperVLocalHostingManager)}] was created with the wrong constructor.");
 
+            this.setupState        = setupState;
             this.secureSshPassword = secureSshPassword;
 
             if (IsProvisionNOP)
@@ -301,20 +302,20 @@ namespace Neon.Kube
 
             Directory.CreateDirectory(vmDriveFolder);
 
-            // Download the GZIPed VHDX template if it's not already present or has 
-            // changed.  Note that we're going to name the file the same as the file 
-            // name from the URI.
+            // Download the GZIPed VHDX template if it's not already present.  Note that we're 
+            // going to name the file the same as the file name from the URI and also that 
+            // templates are considered to be invariant.
 
-            var driveTemplateUri  = new Uri(KubeDownloads.GetNodeImageUri(this.HostingEnvironment));
+            var driveTemplateUri  = new Uri(KubeDownloads.GetNodeImageUri(this.HostingEnvironment, setupState));
             var driveTemplateName = driveTemplateUri.Segments.Last();
 
             driveTemplatePath = Path.Combine(KubeHelper.NodeImageFolder, driveTemplateName);
 
             if (!File.Exists(driveTemplatePath))
             {
-                var nodeImageUri = KubeDownloads.GetNodeImageUri(this.HostingEnvironment);
+                var nodeImageUri = KubeDownloads.GetNodeImageUri(this.HostingEnvironment, setupState);
 
-                setupController.SetOperationStatus($"Download node image VHDX: [{nodeImageUri}]");
+                setupController.SetGlobalStepStatus($"Download node image VHDX: [{nodeImageUri}]");
 
                 Task.Run(
                     async () =>
@@ -332,7 +333,7 @@ namespace Neon.Kube
 
                             if (string.IsNullOrEmpty(contentEncoding) || !contentEncoding.Equals("gzip", StringComparison.InvariantCultureIgnoreCase))
                             {
-                                throw new KubeException($"[{nodeImageUri}] has unsupported [Content-Encoding={contentEncoding}].  Expecting [gzip].");
+                                throw new KubeException($"[{nodeImageUri}] has unsupported [Content-Encoding={contentEncoding}].  Expecting [gzip]");
                             }
 
                             try
@@ -359,11 +360,11 @@ namespace Neon.Kube
                                             {
                                                 var percentComplete = (int)(((double)fileStream.Length / (double)contentLength) * 100.0);
 
-                                                setupController.SetOperationStatus($"Downloading VHDX: [{percentComplete}%] [{nodeImageUri}]");
+                                                setupController.SetGlobalStepStatus($"Downloading VHDX: [{percentComplete}%] [{nodeImageUri}]");
                                             }
                                             else
                                             {
-                                                setupController.SetOperationStatus($"Downloading VHDX: [{fileStream.Length} bytes] [{nodeImageUri}]");
+                                                setupController.SetGlobalStepStatus($"Downloading VHDX: [{fileStream.Length} bytes] [{nodeImageUri}]");
                                             }
                                         }
                                     }
@@ -376,7 +377,7 @@ namespace Neon.Kube
 
                                 if (File.Exists(driveTemplatePath))
                                 {
-                                    File.Decrypt(driveTemplatePath);
+                                    File.Delete(driveTemplatePath);
                                 }
 
                                 throw;
@@ -385,7 +386,7 @@ namespace Neon.Kube
 
                     }).Wait();
 
-                setupController.SetOperationStatus();
+                setupController.SetGlobalStepStatus();
             }
 
             // Handle any necessary Hyper-V initialization.
@@ -395,7 +396,7 @@ namespace Neon.Kube
                 // We're going to create an external Hyper-V switch if there
                 // isn't already an external switch.
 
-                setupController.SetOperationStatus("Scanning network adapters");
+                setupController.SetGlobalStepStatus("Scanning network adapters");
 
                 var switches       = hyperv.ListVmSwitches();
                 var externalSwitch = switches.FirstOrDefault(s => s.Type == VirtualSwitchType.External);
@@ -413,12 +414,12 @@ namespace Neon.Kube
                 // taking care to issue a warning if any machines already exist 
                 // and we're not doing [force] mode.
 
-                setupController.SetOperationStatus("Scanning virtual machines");
+                setupController.SetGlobalStepStatus("Scanning virtual machines");
 
                 var existingMachines = hyperv.ListVms();
                 var conflicts        = string.Empty;
 
-                setupController.SetOperationStatus("Stopping virtual machines");
+                setupController.SetGlobalStepStatus("Stopping virtual machines");
 
                 foreach (var machine in existingMachines)
                 {
@@ -444,7 +445,7 @@ namespace Neon.Kube
                     throw new HyperVException($"[{conflicts}] virtual machine(s) already exist.");
                 }
 
-                setupController.SetOperationStatus();
+                setupController.SetGlobalStepStatus();
             }
         }
 
@@ -569,7 +570,7 @@ namespace Neon.Kube
                     var partitionedDisks = node.ListPartitionedDisks();
                     var osDisk           = partitionedDisks.Single();
 
-                    if (osDiskBytes > KubeConst.NodeTemplateDiskSize)
+                    if (osDiskBytes > KubeConst.MinNodeDiskSizeGiB)
                     {
                         node.Status = $"resize: OS disk";
                         node.SudoCommand($"growpart {osDisk} 2", RunOptions.None);

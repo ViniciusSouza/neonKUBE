@@ -63,7 +63,7 @@ namespace Neon.Kube
 {
     /// <summary>
     /// <para>
-    /// Uses an SSH/SCP connection to provide access to Linux machines to access
+    /// Uses a SSH/SCP connection to provide access to Linux machines to access
     /// files, run commands, etc.
     /// </para>
     /// <note>
@@ -467,7 +467,7 @@ namespace Neon.Kube
 
         /// <summary>
         /// Ensures that the node operating system and version is supported for a neonKUBE
-        /// cluster.  This faults the nodeproxy on faliure.
+        /// cluster.  This faults the node proxy on faliure.
         /// </summary>
         /// <param name="statusWriter">Optional status writer used when the method is not being executed within a setup controller.</param>
         /// <returns><c>true</c> if the operation system is supported.</returns>
@@ -488,23 +488,74 @@ namespace Neon.Kube
         }
 
         /// <summary>
+        /// Installs any security related updates on the node.  These are
+        /// the <b>unattended updates</b>.
+        /// </summary>
+        /// <param name="hostingEnvironment">Specifies the hosting environment.</param>
+        public void PatchLinux(HostingEnvironment hostingEnvironment)
+        {
+            SudoCommand("unattended-upgrade");
+        }
+
+        /// <summary>
+        /// Updates the node by applying all outstanding package updates but without 
+        /// upgrading the Linux distribution.
+        /// </summary>
+        /// <param name="hostingEnvironment">Specifies the hosting environment.</param>
+        public void UpdateLinux(HostingEnvironment hostingEnvironment)
+        {
+            SudoCommand("unattended-upgrade");
+        }
+
+        /// <summary>
+        /// Upgrades the Linux distribution on the node.
+        /// </summary>
+        /// <param name="hostingEnvironment">Specifies the hosting environment.</param>
+        public void UpgradeLinux(HostingEnvironment hostingEnvironment)
+        {
+            SudoCommand("apt-get dist-upgrade -yq", RunOptions.Defaults | RunOptions.FaultOnError);
+        }
+
+        /// <summary>
         /// Cleans a node by removing unnecessary package manager metadata, cached DHCP information, etc.
         /// and then fills unreferenced file system blocks and nodes with zeros so the disk image will
         /// compress better.
         /// </summary>
+        /// <param name="hostingEnvironment">Specifies the hosting environment.</param>
         /// <param name="statusWriter">Optional status writer used when the method is not being executed within a setup controller.</param>
-        public void Clean(Action<string> statusWriter = null)
+        public void Clean(HostingEnvironment hostingEnvironment, Action<string> statusWriter = null)
         {
-            KubeHelper.WriteStatus(statusWriter, "Clean", "VM");
-            Status = "clean: VM";
+            KubeHelper.WriteStatus(statusWriter, "Clean", "File system");
+            Status = "clean: file system";
+
+            var cleanCommand = "fstrim /";
+
+            switch (hostingEnvironment)
+            {
+                 case HostingEnvironment.Wsl2:
+
+                    // We don't need to clean WSL2 because the VM image being
+                    // created is a TAR file rather than a block device image.
+
+                    cleanCommand = string.Empty;
+                    break;
+
+                case HostingEnvironment.XenServer:
+
+                    // XenServer doesn't support [fstrim] so we'll fill free 
+                    // space with zeros instead.
+
+                    cleanCommand = "sfill -fllz /";
+                    break;
+            }
 
             var cleanScript =
-@"#!/bin/bash
+$@"#!/bin/bash
 cloud-init clean
 apt-get clean
 rm -rf /var/lib/apt/lists
 rm -rf /var/lib/dhcp/*
-fstrim /
+{cleanCommand}
 ";
             SudoCommand(CommandBundle.FromScript(cleanScript), RunOptions.FaultOnError);
         }
@@ -516,13 +567,17 @@ fstrim /
         /// Pass <c>true</c> to perform a full distribution upgrade or <c>false</c> to just 
         /// upgrade packages.
         /// </param>
-        public void UpgradeNode(bool fullUpgrade)
+        /// <param name="statusWriter">Optional status writer used when the method is not being executed within a setup controller.</param>
+        public void UpgradeNode(bool fullUpgrade, Action<string> statusWriter = null)
         {
             var nodeDefinition = NeonHelper.CastTo<NodeDefinition>(Metadata);
 
             InvokeIdempotent($"setup/upgrade-linux",
                 () =>
                 {
+                    KubeHelper.WriteStatus(statusWriter, "Upgrade", $"Linux [full={fullUpgrade}]");
+                    Status = $"upgrade: linux [full={fullUpgrade}])";
+
                     // Upgrade Linux packages if requested.
 
                     if (fullUpgrade)

@@ -31,7 +31,6 @@ using System.Threading.Tasks;
 
 using Neon.Common;
 using Neon.Diagnostics;
-using Neon.Kube;
 
 namespace Neon.XenServer
 {
@@ -71,7 +70,7 @@ namespace Neon.XenServer
         /// is currently set to a unique name like <b>neon-dvd-UUID.iso</b> to avoid
         /// conflicts.
         /// </summary>
-        public string CdName { get; internal set; }
+        public string IsoName { get; internal set; }
 
         /// <summary>
         /// Returns the path on the XenServer for the folder for the storage

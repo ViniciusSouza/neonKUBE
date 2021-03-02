@@ -53,14 +53,17 @@ namespace Neon.Kube
         /// <summary>
         /// Configures NTP and also installs some tool scripts for managing this.
         /// </summary>
+        /// <param name="setupState">The setup controller mstate.</param>
         /// <param name="statusWriter">Optional status writer used when the method is not being executed within a setup controller.</param>
-        public void SetupConfigureNtp(Action<string> statusWriter = null)
+        public void SetupConfigureNtp(ObjectDictionary setupState, Action<string> statusWriter = null)
         {
+            Covenant.Requires<ArgumentNullException>(setupState != null, nameof(setupState));
+
             InvokeIdempotent("setup/ntp",
                 () =>
                 {
                     KubeHelper.WriteStatus(statusWriter, "Configure", $"NTP");
-                    Status = $"configure: ntp";
+                    Status = $"configure: NTP";
 
                     var clusterDefinition = this.Cluster.Definition;
                     var nodeDefinition    = this.NodeDefinition;
@@ -336,7 +339,8 @@ service ntp restart
         /// of the server within the cluster.
         /// </summary>
         /// <param name="setupState">The setup controller state.</param>
-        public void ConfigureEnvironmentVariables(ObjectDictionary setupState)
+        /// <param name="statusWriter">Optional status writer used when the method is not being executed within a setup controller.</param>
+        public void ConfigureEnvironmentVariables(ObjectDictionary setupState, Action<string> statusWriter = null)
         {
             Covenant.Requires<ArgumentNullException>(setupState != null, nameof(setupState));
 
@@ -462,7 +466,7 @@ service ntp restart
 $@"
 127.0.0.1	    localhost
 127.0.0.1       kubernetes-masters
-{nodeAddress}{separator}{Name}
+{nodeAddress}{separator}{Name}{separator}{KubeConst.LocalClusterRegistry}
 ::1             localhost ip6-localhost ip6-loopback
 ff02::1         ip6-allnodes
 ff02::2         ip6-allrouters
@@ -474,7 +478,8 @@ ff02::2         ip6-allrouters
         /// Configures cluster package manager caching.
         /// </summary>
         /// <param name="setupState">The setup controller state.</param>
-        public void SetupPackageProxy(ObjectDictionary setupState)
+        /// <param name="statusWriter">Optional status writer used when the method is not being executed within a setup controller.</param>
+        public void SetupPackageProxy(ObjectDictionary setupState, Action<string> statusWriter = null)
         {
             Covenant.Requires<ArgumentNullException>(setupState != null, nameof(setupState));
 
@@ -591,7 +596,8 @@ EOF
         /// Performs common node configuration.
         /// </summary>
         /// <param name="setupState">The setup controller state.</param>
-        public void SetupNode(ObjectDictionary setupState)
+        /// <param name="statusWriter">Optional status writer used when the method is not being executed within a setup controller.</param>
+        public void SetupNode(ObjectDictionary setupState, Action<string> statusWriter = null)
         {
             Covenant.Requires<ArgumentNullException>(setupState != null, nameof(setupState));
 
@@ -602,11 +608,15 @@ EOF
             InvokeIdempotent("setup/common",
                 () =>
                 {
-                    PrepareNode(setupState);
-                    ConfigureEnvironmentVariables(setupState);
-                    SetupPackageProxy(setupState);
+                    PrepareNode(setupState, statusWriter);
+                    ConfigureEnvironmentVariables(setupState, statusWriter);
+                    SetupPackageProxy(setupState, statusWriter);
                     UpdateHostname();
-                    SetupKublet(setupState);
+                    NodeInitialize(setupState, statusWriter);
+                    NodeInstallCriO(setupState, statusWriter);
+                    NodeInstallPodman(setupState, statusWriter);
+                    NodeInstallKubernetes(setupState, statusWriter);
+                    SetupKublet(setupState, statusWriter);
                 });
         }
 
@@ -614,13 +624,17 @@ EOF
         /// Configures the the <b>kublet</b> service.
         /// </summary>
         /// <param name="setupState">The setup controller state.</param>
-        public void SetupKublet(ObjectDictionary setupState)
+        /// <param name="statusWriter">Optional status writer used when the method is not being executed within a setup controller.</param>
+        public void SetupKublet(ObjectDictionary setupState, Action<string> statusWriter = null)
         {
             Covenant.Requires<ArgumentNullException>(setupState != null, nameof(setupState));
 
             InvokeIdempotent("setup/kublet",
                 () =>
                 {
+                    KubeHelper.WriteStatus(statusWriter, "Setup", "Kublet");
+                    Status = "setup: kublet";
+
                     var script =
 @"
 echo KUBELET_EXTRA_ARGS=--network-plugin=cni --cni-bin-dir=/opt/cni/bin --cni-conf-dir=/etc/cni/net.d --feature-gates=\""AllAlpha=false,RunAsGroup=true\"" --container-runtime=remote --cgroup-driver=systemd --container-runtime-endpoint='unix:///var/run/crio/crio.sock' --runtime-request-timeout=5m --resolv-conf=/run/systemd/resolve/resolv.conf > /etc/default/kubelet
@@ -638,6 +652,7 @@ service kubelet restart
         /// <param name="releaseName">Optionally specifies the component release name.</param>
         /// <param name="namespace">Optionally specifies the namespace where Kubernetes namespace where the Helm chart should be installed. This defaults to <b>default</b></param>
         /// <param name="values">Optionally specifies Helm chart values.</param>
+        /// <param name="statusWriter">Optional status writer used when the method is not being executed within a setup controller.</param>
         /// <returns>The tracking <see cref="Task"/>.</returns>
         /// <remarks>
         /// neonKUBE images prepositions the Helm chart files embedded as resources in the <b>Resources/Helm</b>
@@ -647,9 +662,10 @@ service kubelet restart
         /// </remarks>
         public async Task InstallHelmChartAsync(
             string                              chartName,
-            string                              releaseName = null,
-            string                              @namespace  = "default",
-            List<KeyValuePair<string, object>>  values      = null)
+            string                              releaseName  = null,
+            string                              @namespace   = "default",
+            List<KeyValuePair<string, object>>  values       = null,
+            Action<string>                      statusWriter = null)
         {
             if (string.IsNullOrEmpty(releaseName))
             {
@@ -661,6 +677,9 @@ service kubelet restart
             InvokeIdempotent("setup/helm-unzip",
                 () =>
                 {
+                    KubeHelper.WriteStatus(statusWriter, "Unzip", "Helm Charts");
+                    Status = "unzip: helm charts";
+
                     var zipPath = LinuxPath.Combine(KubeNodeFolders.Helm, "charts.zip");
                     
                     SudoCommand($"unzip {zipPath} -d {KubeNodeFolders.Helm} || true");
@@ -672,12 +691,21 @@ service kubelet restart
             InvokeIdempotent($"setup/helm-install-{releaseName}",
                 () =>
                 {
+                    KubeHelper.WriteStatus(statusWriter, "Install", $"Helm Install [{releaseName}]");
+                    Status = $"helm: install [{releaseName}]";
+
                     var valueOverrides = new StringBuilder();
 
                     if (values != null)
                     {
                         foreach (var value in values)
                         {
+                            if (value.Value == null)
+                            {
+                                valueOverrides.AppendWithSeparator($"--set {value.Key}=null");
+                                continue;
+                            }
+
                             var valueType = value.Value.GetType();
 
                             if (valueType == typeof(string))

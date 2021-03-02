@@ -18,6 +18,12 @@
 # Publishes RELEASE builds of the NeonForge Nuget packages to the
 # local file system and public Nuget.org repositories.
 
+# Import the global project include file.
+
+. $env:NF_ROOT/Powershell/includes.ps1
+
+# Handle permission elevation if necessary.
+
 if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator))
 {
     # Relaunch as an elevated process:
@@ -25,19 +31,32 @@ if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
     exit
 }
 
+# Sign into 1Password and retrieve any necessary credentials.
+
+OpSignin
+
+$nugetApiKey = OpGetPassword "NEON_OP_NUGET_KEY"
+
+#------------------------------------------------------------------------------
+# Sets the package version in the specified project file.
+
 function SetVersion
 {
     [CmdletBinding()]
     param (
         [Parameter(Position=0, Mandatory=1)]
         [string]$project,
-        [Parameter(Position=0, Mandatory=2)]
+        [Parameter(Position=1, Mandatory=2)]
         [string]$version
     )
 
     "$project"
-	neon-build pack-version "$env:NF_ROOT\neonLIBRARY-version.txt" "$env:NF_ROOT\Lib\$project\$project.csproj"
+	neon-build pack-version NeonLibraryVersion "$env:NF_ROOT\Lib\$project\$project.csproj"
+    ThrowOnExitCode
 }
+
+#------------------------------------------------------------------------------
+# Builds and publishes the project packages.
 
 function Publish
 {
@@ -45,11 +64,14 @@ function Publish
     param (
         [Parameter(Position=0, Mandatory=1)]
         [string]$project,
-        [Parameter(Position=0, Mandatory=2)]
+        [Parameter(Position=1, Mandatory=2)]
         [string]$version
     )
 
-	dotnet pack "$env:NF_ROOT\Lib\$project\$project.csproj" -c Release -o "$env:NF_BUILD\nuget"
+    $projectPath = [io.path]::combine($env:NF_ROOT, "Lib", "$project", "$project" + ".csproj")
+
+	dotnet pack $projectPath -c Release -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg -o "$env:NF_BUILD\nuget"
+    ThrowOnExitCode
 
     if (Test-Path "$env:NF_ROOT\Lib\$project\prerelease.txt")
     {
@@ -66,17 +88,20 @@ function Publish
         $prerelease = ""
     }
 
-	nuget push -Source nuget.org "$env:NF_BUILD\nuget\$project.$libraryVersion$prerelease.nupkg"
+	nuget push -Source nuget.org -ApiKey $nugetApiKey "$env:NF_BUILD\nuget\$project.$libraryVersion$prerelease.nupkg"
+    ThrowOnExitCode
 }
 
 # Load the library and neonKUBE versions.
 
-$libraryVersion  = Get-Content "$env:NF_ROOT\neonLIBRARY-version.txt" -First 1
-$neonkubeVersion = Get-Content "$env:NF_ROOT\neonLKUBE-version.txt" -First 1
-
-# Copy the version from [$/product-version] into [$/Lib/Neon/Common/Build.cs]
-
-neon-build build-version
+$nfRoot          = "$env:NF_ROOT"
+$nfSolution      = "$nfRoot\neonKUBE.sln"
+$nfBuild         = "$env:NF_BUILD"
+$nfLib           = "$nfRoot\Lib"
+$nfTools         = "$nfRoot\Tools"
+$nfToolBin       = "$nfRoot\ToolBin
+$libraryVersion  = $(& "$nfToolBin\neon-build" read-version "$nfLib/Neon.Common/Build.cs" NeonLibraryVersion)
+$neonkubeVersion = $(& "$nfToolBin\neon-build" read-version "$nfLib/Neon.Common/Build.cs" NeonKubeVersion)
 
 # Update the project versions.
 
@@ -94,12 +119,14 @@ SetVersion Neon.HyperV              $libraryVersion
 # SetVersion Neon.Kube.Google         $neonkubeVersion
 # SetVersion Neon.Kube.Hosting        $neonkubeVersion
 # SetVersion Neon.Kube.HyperV         $neonkubeVersion
-# SetVersion Neon.Kube.HyperVLocal    $neonkubeVersion
 # SetVersion Neon.Kube.Wsl2           $neonkubeVersion
+# SetVersion Neon.Kube.HyperVLocal    $neonkubeVersion
+# SetVersion Neon.Kube.Services       $neonkubeVersion
 # SetVersion Neon.Kube.XenServer      $neonkubeVersion
 # SetVersion Neon.Kube.Xunit          $neonkubeVersion
 SetVersion Neon.Service             $libraryVersion
 SetVersion Neon.ModelGen            $libraryVersion
+SetVersion Neon.ModelGenerator      $libraryVersion
 SetVersion Neon.Nats                $libraryVersion
 SetVersion Neon.Postgres            $libraryVersion
 SetVersion Neon.SSH                 $libraryVersion
@@ -132,11 +159,13 @@ Publish Neon.HyperV                 $libraryVersion
 # Publish Neon.Kube.Hosting           $neonkubeVersion
 # Publish Neon.Kube.HyperV            $neonkubeVersion
 # Publish Neon.Kube.HyperVLocal       $neonkubeVersion
+# Publish Neon.Kube.Services          $neonkubeVersion
 # Publish Neon.Kube.Wsl2              $neonkubeVersion
 # Publish Neon.Kube.XenServer         $neonkubeVersion
 # Publish Neon.Kube.Xunit             $neonkubeVersion
 Publish Neon.Service                $libraryVersion
 Publish Neon.ModelGen               $libraryVersion
+Publish Neon.ModelGenerator         $libraryVersion
 Publish Neon.Nats                   $libraryVersion
 Publish Neon.Postgres               $libraryVersion
 Publish Neon.SSH                    $libraryVersion
@@ -154,4 +183,4 @@ Publish Neon.YugaByte               $libraryVersion
 ""
 "** Package publication completed"
 ""
-pause
+

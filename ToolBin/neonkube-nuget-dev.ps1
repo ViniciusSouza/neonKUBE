@@ -21,8 +21,6 @@
 #
 # NOTE: This is script works only for maintainers with proper credentials.
 
-$ErrorActionPreference = "Stop"
-
 # Import the global project include file.
 
 . $env:NF_ROOT/Powershell/includes.ps1
@@ -31,32 +29,12 @@ $ErrorActionPreference = "Stop"
 # be available only for maintainers and are intialized by the neonCLOUD
 # [buildenv.cmd] script.
 
-if (!(Test-Path env:NC_NUGET_DEVFEED))
+if (!(Test-Path env:NC_USER))
 {
-    "ERROR: This script is intended for maintainers only"
+    "*** ERROR: This script is intended for maintainers only"
+    "           [NC_USER] environment variable is not defined."
     ""
-    "NC_NUGET_DEVFEED environment variable is not defined."
-    "Maintainers should re-run the neonCLOUD [buildenv.cmd] script."
-
-    return 1
-}
-
-if (!(Test-Path env:NC_NUGET_VERSIONER))
-{
-    "ERROR: This script is intended for maintainers only"
-    ""
-    "NC_NUGET_VERSIONER environment variable is not defined."
-    "Maintainers should re-run the neonCLOUD [buildenv.cmd] script."
-
-    return 1
-}
-
-if (!(Test-Path env:NC_NUGET_VERSIONER_APIKEY))
-{
-    "ERROR: This script is intended for maintainers only"
-    ""
-    "NC_NUGET_VERSIONER_APIKEY environment variable is not defined."
-    "Maintainers should re-run the neonCLOUD [buildenv.cmd] script."
+    "           Maintainers should re-run the neonCLOUD [buildenv.cmd] script."
 
     return 1
 }
@@ -70,6 +48,14 @@ if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
     exit
 }
 
+# Sign into 1Password and retrieve any necessary credentials.
+
+OpSignin
+
+$versionerKey  = OpGetPassword "NEON_OP_NUGET_VERSIONER_KEY"
+$devFeedApiKey = OpGetPassword "NEON_OP_DEVFEED_KEY"
+
+#------------------------------------------------------------------------------
 # Sets the package version in the specified project file and makes a backup
 # of the original project file named [$project.bak].
 
@@ -92,11 +78,15 @@ function SetVersion
     $orgVersion     = $match.Groups[1].Value
     $tmpProjectFile = $orgProjectFile.Replace("<Version>$orgVersion</Version>", "<Version>$version</Version>")
 
-    Copy-Item "$projectPath" "$projectPath.bak"
+    if (!(Test-Path "$projectPath.bak"))
+    {
+        Copy-Item "$projectPath" "$projectPath.bak"
+    }
     
     $tmpProjectFile | Out-File -FilePath "$projectPath" -Encoding utf8
 }
 
+#------------------------------------------------------------------------------
 # Restores the original project version for a project.
 
 function RestoreVersion
@@ -115,7 +105,8 @@ function RestoreVersion
     Remove-Item "$projectPath.bak"
 }
 
-# Builds and publishes the project.
+#------------------------------------------------------------------------------
+# Builds and publishes the project packages.
 
 function Publish
 {
@@ -134,13 +125,11 @@ function Publish
 
     $projectPath = [io.path]::combine($env:NF_ROOT, "Lib", "$project", "$project" + ".csproj")
 
-    dotnet pack $projectPath  -c Debug --include-symbols --include-source -o "$env:NF_BUILD\nuget"
-    nuget push -Source $env:NC_NUGET_DEVFEED "$env:NF_BUILD\nuget\$project.$version.nupkg"
-   
-    # NOTE: We're not doing this because including source and symbols above because
-    # doesn't seem to to work.
-    #
-	# dotnet pack "$env:NF_ROOT\Lib\$project\$project.csproj" -c Debug --include-symbols --include-source -o "$env:NUGET_LOCAL_FEED"
+    dotnet pack $projectPath  -c Debug -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg -o "$env:NF_BUILD\nuget"
+    ThrowOnExitCode
+
+    nuget push -Source $env:NC_NUGET_DEVFEED -ApiKey $devFeedApiKey "$env:NF_BUILD\nuget\$project.$version.nupkg"
+    ThrowOnExitCode
 }
 
 # We're going to call the neonCLOUD nuget versioner service to atomically increment the 
@@ -166,7 +155,7 @@ $branch = GitBranch $env:NF_ROOT
 
 # Get the nuget versioner API key from the environment and convert it into a base-64 string.
 
-$versionerKeyBase64 = [Convert]::ToBase64String(([System.Text.Encoding]::UTF8.GetBytes($env:NC_NUGET_VERSIONER_APIKEY)))
+$versionerKeyBase64 = [Convert]::ToBase64String(([System.Text.Encoding]::UTF8.GetBytes($versionerKey)))
 
 # Submit PUTs request to the versioner service, specifying the counter name.  The service will
 # atomically increment the counter and return the next value.
@@ -190,6 +179,7 @@ SetVersion Neon.Docker              $libraryVersion
 SetVersion Neon.HyperV              $libraryVersion
 SetVersion Neon.Service             $libraryVersion
 SetVersion Neon.ModelGen            $libraryVersion
+SetVersion Neon.ModelGenerator      $libraryVersion
 SetVersion Neon.Nats                $libraryVersion
 SetVersion Neon.Postgres            $libraryVersion
 SetVersion Neon.SSH                 $libraryVersion
@@ -212,7 +202,7 @@ SetVersion Neon.Kube.Google         $kubeVersion
 SetVersion Neon.Kube.Hosting        $kubeVersion
 SetVersion Neon.Kube.HyperV         $kubeVersion
 SetVersion Neon.Kube.HyperVLocal    $kubeVersion
-SetVersion Neon.Kube.Wsl2           $kubeVersion
+SetVersion Neon.Kube.Services       $kubeVersion
 SetVersion Neon.Kube.XenServer      $kubeVersion
 SetVersion Neon.Kube.Xunit          $kubeVersion
 
@@ -227,6 +217,7 @@ Publish Neon.Docker                 $libraryVersion
 Publish Neon.HyperV                 $libraryVersion
 Publish Neon.Service                $libraryVersion
 Publish Neon.ModelGen               $libraryVersion
+Publish Neon.ModelGenerator         $libraryVersion
 Publish Neon.Nats                   $libraryVersion
 Publish Neon.Postgres               $libraryVersion
 Publish Neon.SSH                    $libraryVersion
@@ -249,48 +240,48 @@ Publish Neon.Kube.Google            $kubeVersion
 Publish Neon.Kube.Hosting           $kubeVersion
 Publish Neon.Kube.HyperV            $kubeVersion
 Publish Neon.Kube.HyperVLocal       $kubeVersion
-Publish Neon.Kube.Wsl2              $kubeVersion
+Publish Neon.Kube.Services          $kubeVersion
 Publish Neon.Kube.XenServer         $kubeVersion
 Publish Neon.Kube.Xunit             $kubeVersion
 
 # Restore the project versions
 
-RestoreVersion Neon.Cadence             
-RestoreVersion Neon.Cassandra           
-RestoreVersion Neon.Common              
-RestoreVersion Neon.Couchbase           
-RestoreVersion Neon.Cryptography        
-RestoreVersion Neon.Docker              
-RestoreVersion Neon.HyperV              
-RestoreVersion Neon.Service             
-RestoreVersion Neon.ModelGen            
-RestoreVersion Neon.Nats                
-RestoreVersion Neon.Postgres            
-RestoreVersion Neon.SSH                 
-RestoreVersion Neon.SSH.NET             
-RestoreVersion Neon.Temporal            
-RestoreVersion Neon.Web                 
-RestoreVersion Neon.XenServer           
-RestoreVersion Neon.Xunit               
-RestoreVersion Neon.Xunit.Cadence       
-RestoreVersion Neon.Xunit.Couchbase     
-RestoreVersion Neon.Xunit.Temporal      
-RestoreVersion Neon.Xunit.YugaByte      
-RestoreVersion Neon.YugaByte            
+RestoreVersion Neon.Cadence
+RestoreVersion Neon.Cassandra
+RestoreVersion Neon.Common
+RestoreVersion Neon.Couchbase
+RestoreVersion Neon.Cryptography
+RestoreVersion Neon.Docker
+RestoreVersion Neon.HyperV
+RestoreVersion Neon.Service
+RestoreVersion Neon.ModelGen
+RestoreVersion Neon.ModelGenerator
+RestoreVersion Neon.Nats
+RestoreVersion Neon.Postgres
+RestoreVersion Neon.SSH
+RestoreVersion Neon.SSH.NET
+RestoreVersion Neon.Temporal
+RestoreVersion Neon.Web
+RestoreVersion Neon.XenServer
+RestoreVersion Neon.Xunit
+RestoreVersion Neon.Xunit.Cadence
+RestoreVersion Neon.Xunit.Couchbase
+RestoreVersion Neon.Xunit.Temporal
+RestoreVersion Neon.Xunit.YugaByte
+RestoreVersion Neon.YugaByte
 
-RestoreVersion Neon.Kube                
-RestoreVersion Neon.Kube.Aws            
-RestoreVersion Neon.Kube.Azure          
-RestoreVersion Neon.Kube.BareMetal      
-RestoreVersion Neon.Kube.Google         
-RestoreVersion Neon.Kube.Hosting        
-RestoreVersion Neon.Kube.HyperV         
-RestoreVersion Neon.Kube.HyperVLocal    
-RestoreVersion Neon.Kube.Wsl2      
-RestoreVersion Neon.Kube.XenServer      
-RestoreVersion Neon.Kube.Xunit          
+RestoreVersion Neon.Kube
+RestoreVersion Neon.Kube.Aws
+RestoreVersion Neon.Kube.Azure
+RestoreVersion Neon.Kube.BareMetal
+RestoreVersion Neon.Kube.Google
+RestoreVersion Neon.Kube.Hosting
+RestoreVersion Neon.Kube.HyperV
+RestoreVersion Neon.Kube.HyperVLocal
+RestoreVersion Neon.Kube.Services
+RestoreVersion Neon.Kube.XenServer
+RestoreVersion Neon.Kube.Xunit
 
 ""
 "** Package publication completed"
 ""
-pause

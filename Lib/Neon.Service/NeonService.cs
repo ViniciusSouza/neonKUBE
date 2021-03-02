@@ -267,8 +267,8 @@ namespace Neon.Service
     /// <see cref="NeonService"/> can enable services to publish Prometheus metrics with a
     /// single line of code; simply set <see cref="NeonService.MetricsOptions"/>.<see cref="MetricsOptions.Mode"/> to
     /// <see cref="MetricsMode.Scrape"/> before calling <see cref="RunAsync(bool)"/>.  This configures
-    /// your service to publish metrics via HTTP via <b>http://0.0.0.0:</b><see cref="NetworkPorts.NeonPrometheus"/><b>/metrics/</b>.
-    /// We've resistered port <see cref="NetworkPorts.NeonPrometheus"/> with Prometheus as a standard port
+    /// your service to publish metrics via HTTP via <b>http://0.0.0.0:</b><see cref="NetworkPorts.NeonPrometheusScrape"/><b>/metrics/</b>.
+    /// We've resistered port <see cref="NetworkPorts.NeonPrometheusScrape"/> with Prometheus as a standard port
     /// to be used for micro services running in Kubernetes or on other container platforms to make it 
     /// easy configure scraping for a cluster.
     /// </para>
@@ -414,7 +414,7 @@ namespace Neon.Service
 
                 try
                 {
-                    EncryptFile(path);
+                    NeonHelper.EncryptFile(path);
                 }
                 catch
                 {
@@ -456,25 +456,6 @@ namespace Neon.Service
                 Directory.CreateDirectory(path);
 
                 return cachedPasswordsFolder = path;
-            }
-        }
-
-        /// <summary>
-        /// Encrypts a file or directory when supported by the underlying operating system
-        /// and file system.  Currently, this only works on non-HOME versions of Windows
-        /// and NTFS file systems.  This fails silently.
-        /// </summary>
-        /// <param name="path">The file or directory path.</param>
-        /// <returns><c>true</c> if the operation was successful.</returns>
-        private static bool EncryptFile(string path)
-        {
-            try
-            {
-                return Win32.EncryptFile(path);
-            }
-            catch
-            {
-                return false;
             }
         }
 

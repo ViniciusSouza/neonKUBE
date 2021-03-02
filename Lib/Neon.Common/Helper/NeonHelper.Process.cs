@@ -271,19 +271,26 @@ namespace Neon.Common
         /// <param name="process">
         /// The optional <see cref="Process"/> instance to use to launch the process.
         /// </param>
+        /// <param name="workingDirectory">
+        /// The optional working directory to set while executing the program.
+        /// </param>
+        /// <param name="input">
+        /// Optionally specifies a <see cref="TextReader"/> with text to be sent 
+        /// to the process as input.
+        /// </param>
         /// <returns>The process exit code.</returns>
         /// <exception cref="TimeoutException">Thrown if the process did not exit within the <paramref name="timeout"/> limit.</exception>
         /// <remarks>
         /// <note>
-        /// If <paramref name="timeout"/> is exceeded and execution has not commpleted in time 
+        /// If <paramref name="timeout"/> is exceeded and execution has not completed in time 
         /// then a <see cref="TimeoutException"/> will be thrown and the process will be killed
         /// if it was created by this method.  Process instances passed via the <paramref name="process"/>
         /// parameter will not be killed in this case.
         /// </note>
         /// </remarks>
-        public static int Execute(string path, object[] args, TimeSpan? timeout = null, Process process = null)
+        public static int Execute(string path, object[] args, TimeSpan? timeout = null, Process process = null, string workingDirectory = null, TextReader input = null)
         {
-            return Execute(path, NormalizeExecArgs(args), timeout, process);
+            return Execute(path, NormalizeExecArgs(args), timeout, process, workingDirectory, input);
         }
 
         /// <summary>
@@ -298,17 +305,24 @@ namespace Neon.Common
         /// <param name="process">
         /// The optional <see cref="Process"/> instance to use to launch the process.
         /// </param>
+        /// <param name="workingDirectory">
+        /// The optional working directory to set while executing the program.
+        /// </param>
+        /// <param name="input">
+        /// Optionally specifies a <see cref="TextReader"/> with text to be sent 
+        /// to the process as input.
+        /// </param>
         /// <returns>The process exit code.</returns>
         /// <exception cref="TimeoutException">Thrown if the process did not exit within the <paramref name="timeout"/> limit.</exception>
         /// <remarks>
         /// <note>
-        /// If <paramref name="timeout"/> is exceeded and execution has not commpleted in time
+        /// If <paramref name="timeout"/> is exceeded and execution has not completed in time
         /// then a <see cref="TimeoutException"/> will be thrown and the process will be killed
         /// if it was created by this method.  Process instances passed via the <paramref name="process"/>
         /// parameter will not be killed in this case.
         /// </note>
         /// </remarks>
-        public static int Execute(string path, string args, TimeSpan? timeout = null, Process process = null)
+        public static int Execute(string path, string args, TimeSpan? timeout = null, Process process = null, string workingDirectory = null, TextReader input = null)
         {
             var processInfo   = new ProcessStartInfo(GetProgramPath(path), args ?? string.Empty);
             var killOnTimeout = process == null;
@@ -322,9 +336,10 @@ namespace Neon.Common
             {
                 processInfo.UseShellExecute        = false;
                 processInfo.CreateNoWindow         = true;
+                processInfo.RedirectStandardInput  = input != null;
                 processInfo.RedirectStandardError  = true;
                 processInfo.RedirectStandardOutput = true;
-                processInfo.WorkingDirectory       = Environment.CurrentDirectory;
+                processInfo.WorkingDirectory       = !string.IsNullOrEmpty(workingDirectory) ? workingDirectory : Environment.CurrentDirectory;
 
                 process.StartInfo                  = processInfo;
                 process.EnableRaisingEvents        = true;
@@ -381,6 +396,26 @@ namespace Neon.Common
                 process.BeginErrorReadLine();
                 process.BeginOutputReadLine();
 
+                if (input != null)
+                {
+                    // $note(jefflill): 
+                    //
+                    // The timeout may not be honored while sending input to the
+                    // process because writes may block if the input buffer is full
+                    // and the process isn't reading fast enough.  It's not really
+                    // possible to enforce this without another thread or task
+                    // tracking this.
+                    //
+                    // ...and that doesn't seem worth the trouble.
+
+                    foreach (var line in input.Lines())
+                    {
+                        process.StandardInput.WriteLine(line);
+                    }
+
+                    process.StandardInput.Close();
+                }
+
                 if (!timeout.HasValue || timeout.Value >= TimeSpan.FromDays(1))
                 {
                     NeonHelper.WaitFor(() => stdErrClosed && stdOutClosed, timeout: timeout ?? TimeSpan.FromDays(365), pollInterval: TimeSpan.FromMilliseconds(250));
@@ -423,21 +458,28 @@ namespace Neon.Common
         /// <param name="process">
         /// The optional <see cref="Process"/> instance to use to launch the process.
         /// </param>
+        /// <param name="workingDirectory">
+        /// The optional working directory to set while executing the program.
+        /// </param>
+        /// <param name="input">
+        /// Optionally specifies a <see cref="TextReader"/> with text to be sent 
+        /// to the process as input.
+        /// </param>
         /// <returns>The process exit code.</returns>
         /// <exception cref="TimeoutException">Thrown if the process did not exit within the <paramref name="timeout"/> limit.</exception>
         /// <remarks>
         /// <note>
-        /// If <paramref name="timeout"/> is exceeded and execution has not commpleted in time
+        /// If <paramref name="timeout"/> is exceeded and execution has not completed in time
         /// then a <see cref="TimeoutException"/> will be thrown and the process will be killed
         /// if it was created by this method.  Process instances passed via the <paramref name="process"/>
         /// parameter will not be killed in this case.
         /// </note>
         /// </remarks>
-        public static async Task<int> ExecuteAsync(string path, object[] args, TimeSpan? timeout = null, Process process = null)
+        public static async Task<int> ExecuteAsync(string path, object[] args, TimeSpan? timeout = null, Process process = null, string workingDirectory = null, TextReader input = null)
         {
             await SyncContext.ClearAsync;
 
-            return await ExecuteAsync(path, NormalizeExecArgs(args), timeout, process);
+            return await ExecuteAsync(path, NormalizeExecArgs(args), timeout, process, workingDirectory, input);
         }
 
         /// <summary>
@@ -452,21 +494,28 @@ namespace Neon.Common
         /// <param name="process">
         /// The optional <see cref="Process"/> instance to use to launch the process.
         /// </param>
+        /// <param name="workingDirectory">
+        /// The optional working directory to set while executing the program.
+        /// </param>
+        /// <param name="input">
+        /// Optionally specifies a <see cref="TextReader"/> with text to be sent 
+        /// to the process as input.
+        /// </param>
         /// <returns>The process exit code.</returns>
         /// <exception cref="TimeoutException">Thrown if the process did not exit within the <paramref name="timeout"/> limit.</exception>
         /// <remarks>
         /// <note>
-        /// If <paramref name="timeout"/> is exceeded and execution has not commpleted in time
+        /// If <paramref name="timeout"/> is exceeded and execution has not completed in time
         /// then a <see cref="TimeoutException"/> will be thrown and the process will be killed
         /// if it was created by this method.  Process instances passed via the <paramref name="process"/>
         /// parameter will not be killed in this case.
         /// </note>
         /// </remarks>
-        public static async Task<int> ExecuteAsync(string path, string args, TimeSpan? timeout = null, Process process = null)
+        public static async Task<int> ExecuteAsync(string path, string args, TimeSpan? timeout = null, Process process = null, string workingDirectory = null, TextReader input = null)
         {
             await SyncContext.ClearAsync;
 
-            return await Task.Run(() => Execute(path, args, timeout, process));
+            return await Task.Run(() => Execute(path, args, timeout, process, workingDirectory, input));
         }
 
         /// <summary>
@@ -549,8 +598,15 @@ namespace Neon.Common
         /// <param name="process">
         /// The optional <see cref="Process"/> instance to use to launch the process.
         /// </param>
+        /// <param name="workingDirectory">
+        /// The optional working directory to set while executing the program.
+        /// </param>
         /// <param name="outputAction">Optional action that will be called when the process outputs some text.</param>
         /// <param name="errorAction">Optional action that will be called when the process outputs some error text.</param>
+        /// <param name="input">
+        /// Optionally specifies a <see cref="TextReader"/> with text to be sent 
+        /// to the process as input.
+        /// </param>
         /// <returns>
         /// The <see cref="ExecuteResponse"/> including the process exit code and capture 
         /// standard output and error streams.
@@ -558,7 +614,7 @@ namespace Neon.Common
         /// <exception cref="TimeoutException">Thrown if the process did not exit within the <paramref name="timeout"/> limit.</exception>
         /// <remarks>
         /// <note>
-        /// If <paramref name="timeout"/> is exceeded and execution has not commpleted in time 
+        /// If <paramref name="timeout"/> is exceeded and execution has not completed in time 
         /// then a <see cref="TimeoutException"/> will be thrown and the process will be killed
         /// if it was created by this method.  Process instances passed via the <paramref name="process"/>
         /// parameter will not be killed in this case.
@@ -573,12 +629,14 @@ namespace Neon.Common
         public static ExecuteResponse ExecuteCapture(
             string          path, 
             object[]        args, 
-            TimeSpan?       timeout      = null,
-            Process         process      = null,
-            Action<string>  outputAction = null,
-            Action<string>  errorAction  = null)
+            TimeSpan?       timeout          = null,
+            Process         process          = null,
+            string          workingDirectory = null,
+            Action<string>  outputAction     = null,
+            Action<string>  errorAction      = null,
+            TextReader      input            = null)
         {
-            return ExecuteCapture(path, NormalizeExecArgs(args), timeout, process, outputAction, errorAction);
+            return ExecuteCapture(path, NormalizeExecArgs(args), timeout, process, workingDirectory, outputAction, errorAction, input);
         }
 
         /// <summary>
@@ -594,8 +652,15 @@ namespace Neon.Common
         /// <param name="process">
         /// The optional <see cref="Process"/> instance to use to launch the process.
         /// </param>
+        /// <param name="workingDirectory">
+        /// The optional working directory to set while executing the program.
+        /// </param>
         /// <param name="outputAction">Optional action that will be called when the process outputs some text.</param>
         /// <param name="errorAction">Optional action that will be called when the process outputs some error text.</param>
+        /// <param name="input">
+        /// Optionally specifies a <see cref="TextReader"/> with text to be sent 
+        /// to the process as input.
+        /// </param>
         /// <returns>
         /// The <see cref="ExecuteResponse"/> including the process exit code and capture 
         /// standard output and error streams.
@@ -603,7 +668,7 @@ namespace Neon.Common
         /// <exception cref="TimeoutException">Thrown if the process did not exit within the <paramref name="timeout"/> limit.</exception>
         /// <remarks>
         /// <note>
-        /// If <paramref name="timeout"/> is exceeded and execution has not commpleted in time 
+        /// If <paramref name="timeout"/> is exceeded and execution has not completed in time 
         /// then a <see cref="TimeoutException"/> will be thrown and the process will be killed
         /// if it was created by this method.  Process instances passed via the <paramref name="process"/>
         /// parameter will not be killed in this case.
@@ -618,10 +683,12 @@ namespace Neon.Common
         public static ExecuteResponse ExecuteCapture(
             string          path, 
             string          args, 
-            TimeSpan?       timeout      = null,
-            Process         process      = null,
-            Action<string>  outputAction = null,
-            Action<string>  errorAction  = null)
+            TimeSpan?       timeout          = null,
+            Process         process          = null,
+            string          workingDirectory = null,
+            Action<string>  outputAction     = null,
+            Action<string>  errorAction      = null,
+            TextReader      input            = null)
         {
             var processInfo     = new ProcessStartInfo(GetProgramPath(path), args ?? string.Empty);
             var externalProcess = process != null;
@@ -639,10 +706,11 @@ namespace Neon.Common
             try
             {
                 processInfo.UseShellExecute        = false;
+                processInfo.RedirectStandardInput  = input != null;
                 processInfo.RedirectStandardError  = true;
                 processInfo.RedirectStandardOutput = true;
                 processInfo.CreateNoWindow         = true;
-                processInfo.WorkingDirectory       = Environment.CurrentDirectory;
+                processInfo.WorkingDirectory       = !string.IsNullOrEmpty(workingDirectory) ? workingDirectory : Environment.CurrentDirectory; ;
 
                 process.StartInfo                  = processInfo;
                 process.OutputDataReceived        += new DataReceivedEventHandler(redirector.OnOutput);
@@ -652,6 +720,26 @@ namespace Neon.Common
                 process.Start();
                 process.BeginOutputReadLine();
                 process.BeginErrorReadLine();
+
+                if (input != null)
+                {
+                    // $note(jefflill): 
+                    //
+                    // The timeout may not be honored while sending input to the
+                    // process because writes may block if the input buffer is full
+                    // and the process isn't reading fast enough.  It's not really
+                    // possible to enforce this without another thread or task
+                    // tracking this.
+                    //
+                    // ...and that doesn't seem worth the trouble.
+
+                    foreach (var line in input.Lines())
+                    {
+                        process.StandardInput.WriteLine(line);
+                    }
+
+                    process.StandardInput.Close();
+                }
 
                 if (!timeout.HasValue || timeout.Value >= TimeSpan.FromDays(1))
                 {
@@ -704,6 +792,13 @@ namespace Neon.Common
         /// <param name="process">
         /// The optional <see cref="Process"/> instance to use to launch the process.
         /// </param>
+        /// <param name="workingDirectory">
+        /// The optional working directory to set while executing the program.
+        /// </param>
+        /// <param name="input">
+        /// Optionally specifies a <see cref="TextReader"/> with text to be sent 
+        /// to the process as input.
+        /// </param>
         /// <returns>
         /// The <see cref="ExecuteResponse"/> including the process exit code and capture 
         /// standard output and error streams.
@@ -711,7 +806,7 @@ namespace Neon.Common
         /// <exception cref="TimeoutException">Thrown if the process did not exit within the <paramref name="timeout"/> limit.</exception>
         /// <remarks>
         /// <note>
-        /// If <paramref name="timeout"/> is exceeded and execution has not commpleted in time 
+        /// If <paramref name="timeout"/> is exceeded and execution has not completed in time 
         /// then a <see cref="TimeoutException"/> will be thrown and the process will be killed
         /// if it was created by this method.  Process instances passed via the <paramref name="process"/>
         /// parameter will not be killed in this case.
@@ -720,12 +815,14 @@ namespace Neon.Common
         public static async Task<ExecuteResponse> ExecuteCaptureAsync(
             string      path, 
             object[]    args,
-            TimeSpan?   timeout = null, 
-            Process     process = null)
+            string      workingDirectory = null,
+            TimeSpan?   timeout          = null, 
+            Process     process          = null,
+            TextReader  input            = null)
         {
             await SyncContext.ClearAsync;
 
-            return await ExecuteCaptureAsync(path, NormalizeExecArgs(args), timeout, process);
+            return await ExecuteCaptureAsync(path, NormalizeExecArgs(args), timeout, process, workingDirectory, input);
         }
 
         /// <summary>
@@ -741,6 +838,13 @@ namespace Neon.Common
         /// <param name="process">
         /// The optional <see cref="Process"/> instance to use to launch the process.
         /// </param>
+        /// <param name="workingDirectory">
+        /// The optional working directory to set while executing the program.
+        /// </param>
+        /// <param name="input">
+        /// Optionally specifies a <see cref="TextReader"/> with text to be sent 
+        /// to the process as input.
+        /// </param>
         /// <returns>
         /// The <see cref="ExecuteResponse"/> including the process exit code and capture 
         /// standard output and error streams.
@@ -748,7 +852,7 @@ namespace Neon.Common
         /// <exception cref="TimeoutException">Thrown if the process did not exit within the <paramref name="timeout"/> limit.</exception>
         /// <remarks>
         /// <note>
-        /// If <paramref name="timeout"/> is exceeded and execution has not commpleted in time 
+        /// If <paramref name="timeout"/> is exceeded and execution has not completed in time 
         /// then a <see cref="TimeoutException"/> will be thrown and the process will be killed
         /// if it was created by this method.  Process instances passed via the <paramref name="process"/>
         /// parameter will not be killed in this case.
@@ -757,12 +861,14 @@ namespace Neon.Common
         public static async Task<ExecuteResponse> ExecuteCaptureAsync(
             string      path, 
             string      args, 
-            TimeSpan?   timeout = null, 
-            Process     process = null)
+            TimeSpan?   timeout          = null, 
+            Process     process          = null, 
+            string      workingDirectory = null,
+            TextReader  input            = null)
         {
             await SyncContext.ClearAsync;
 
-            return await Task.Run(() => ExecuteCapture(path, args, timeout, process));
+            return await Task.Run(() => ExecuteCapture(path, args, timeout, process, workingDirectory, input: input));
         }
 
 #if NETSTANDARD2_0

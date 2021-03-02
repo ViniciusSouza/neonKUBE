@@ -48,13 +48,13 @@ using Neon.Time;
 
 using k8s;
 using k8s.Models;
-using Neon.Collections;
 
 namespace NeonCli
 {
     /// <summary>
     /// Implements the <b>cluster setup</b> command.
     /// </summary>
+    [Command]
     public class ClusterSetupCommand : CommandBase
     {
         //---------------------------------------------------------------------
@@ -72,13 +72,32 @@ OPTIONS:
     --unredacted        - Runs Vault and other commands with potential
                           secrets without redacting logs.  This is useful 
                           for debugging cluster setup  issues.  Do not
-                          use for production hives.
+                          use for production clusters.
 
     --force             - Don't prompt before removing existing contexts
                           that reference the target cluster.
 
     --upload-charts     - Upload helm charts to node before setup. This
-                          is useful when developing.
+                          is useful when debugging.
+
+    --debug             - Implements cluster setup from the base rather
+                          than the node image.  This mode is useful while
+                          developing and debugging cluster setup.  This
+                          implies [--upload-charts].
+
+                          NOTE: This mode is not supported for cloud and
+                                bare-metal environments.
+
+    --base-image-name   - Specifies the base image name to use when operating
+                          in [--debug] mode.  This will be the name of the base
+                          image file as published to our public S3 bucket for
+                          the target hosting manager.  Examples:
+
+                                Hyper-V:   ubuntu-20.04.1.hyperv.vhdx
+                                WSL2:      ubuntu-20.04.20210206.wsl2.tar
+                                XenServer: ubuntu-20.04.1.xenserver.xva
+
+                          NOTE: This is required for [--debug]
 ";
         private const string        logBeginMarker  = "# CLUSTER-BEGIN-SETUP ############################################################";
         private const string        logEndMarker    = "# CLUSTER-END-SETUP-SUCCESS ######################################################";
@@ -87,13 +106,13 @@ OPTIONS:
         private KubeConfigContext   kubeContext;
         private ClusterLogin        clusterLogin;
         private ClusterProxy        cluster;
-        private HostingManager      hostingManager;
+        private HostingManager      hostingManager; 
 
         /// <inheritdoc/>
         public override string[] Words => new string[] { "cluster", "setup" };
 
         /// <inheritdoc/>
-        public override string[] ExtendedOptions => new string[] { "--unredacted", "--force", "--upload-charts" };
+        public override string[] ExtendedOptions => new string[] { "--unredacted", "--force", "--upload-charts", "--debug", "--base-image-name" };
 
         /// <inheritdoc/>
         public override void Help()
@@ -110,8 +129,10 @@ OPTIONS:
                 Program.Exit(1);
             }
 
-            var contextName = KubeContextName.Parse(commandLine.Arguments[0]);
-            var kubeCluster = KubeHelper.Config.GetCluster(contextName.Cluster);
+            var contextName   = KubeContextName.Parse(commandLine.Arguments[0]);
+            var kubeCluster   = KubeHelper.Config.GetCluster(contextName.Cluster);
+            var debug         = commandLine.HasOption("--debug");
+            var uploadCharts  = commandLine.HasOption("--upload-charts") || debug;
 
             clusterLogin = KubeHelper.GetClusterLogin(contextName);
 
@@ -168,7 +189,8 @@ OPTIONS:
 
             // Initialize the cluster proxy and the hbosting manager.
 
-            cluster        = new ClusterProxy(kubeContext, Program.CreateNodeProxy<NodeDefinition>, appendToLog: true, defaultRunOptions: RunOptions.LogOutput | RunOptions.FaultOnError);
+            cluster = new ClusterProxy(kubeContext, Program.CreateNodeProxy<NodeDefinition>, appendToLog: true, defaultRunOptions: RunOptions.LogOutput | RunOptions.FaultOnError);
+
             hostingManager = new HostingManagerFactory(() => HostingLoader.Initialize()).GetManager(cluster, Program.LogPath);
 
             if (hostingManager == null)
@@ -176,6 +198,15 @@ OPTIONS:
                 Console.Error.WriteLine($"*** ERROR: No hosting manager for the [{cluster.Definition.Hosting.Environment}] environment could be located.");
                 Program.Exit(1);
             }
+
+#if ENTERPRISE
+            if (hostingManager.HostingEnvironment == HostingEnvironment.Wsl2)
+            {
+                var wsl2Proxy = new Wsl2Proxy(KubeConst.Wsl2MainDistroName, KubeConst.SysAdminUser);
+                
+                cluster.FirstMaster.Address = IPAddress.Parse(wsl2Proxy.Address);
+            }
+#endif
 
             // Update the cluster node SSH credentials to use the secure password.
 
@@ -213,6 +244,7 @@ OPTIONS:
 
                 // Configure the setup controller state.
 
+                setupController.Add(KubeSetup.DebugModeProperty, debug);
                 setupController.Add(KubeSetup.ClusterProxyProperty, cluster);
                 setupController.Add(KubeSetup.ClusterLoginProperty, clusterLogin);
                 setupController.Add(KubeSetup.HostingManagerProperty, hostingManager);
@@ -223,7 +255,7 @@ OPTIONS:
                 setupController.AddGlobalStep("download binaries", async state => await KubeSetup.InstallWorkstationBinariesAsync(state));
                 setupController.AddWaitUntilOnlineStep("connect");
                 setupController.AddNodeStep("verify OS", (state, node) => node.VerifyNodeOS());
-                setupController.AddNodeStep("setup NTP", (state, node) => node.SetupConfigureNtp());
+                setupController.AddNodeStep("setup NTP", (state, node) => node.SetupConfigureNtp(state));
 
                 // Write the operation begin marker to all cluster node logs.
 
@@ -239,7 +271,7 @@ OPTIONS:
                     (state, node) =>
                     {
                         node.SetupNode(setupController);
-                        node.InvokeIdempotent("setup/common-restart", () => node.RebootAndWait(state));
+                        node.InvokeIdempotent("setup/setup-node-restart", () => node.RebootAndWait(state));
                     },
                     (state, node) => node == cluster.FirstMaster);
 
@@ -251,7 +283,7 @@ OPTIONS:
                         (state, node) =>
                         {
                             node.SetupNode(setupController);
-                            node.InvokeIdempotent("setup/common-restart", () => node.RebootAndWait(setupController));
+                            node.InvokeIdempotent("setup/setup-node-restart", () => node.RebootAndWait(setupController));
                         },
                         (state, node) => node != cluster.FirstMaster);
                 }
@@ -273,9 +305,8 @@ OPTIONS:
                 }
 
                 //-----------------------------------------------------------------
-                // Kubernetes configuration.
+                // Cluster setup.
 
-                setupController.AddNodeStep("install kubernetes", (setupState, node) => node.NodeInstallKubernetes(setupState));
                 setupController.AddGlobalStep("setup cluster", setupState => KubeSetup.SetupClusterAsync(setupState));
 
                 //-----------------------------------------------------------------
@@ -288,12 +319,15 @@ OPTIONS:
                     },
                     (state, node) => node.Metadata.IsMaster);
 
-                setupController.AddNodeStep("check workers",
-                    (state, node) =>
-                    {
-                        KubeDiagnostics.CheckWorker(node, cluster.Definition);
-                    },
-                    (state, node) => node.Metadata.IsWorker);
+                if (cluster.Workers.Count() > 0)
+                {
+                    setupController.AddNodeStep("check workers",
+                        (state, node) =>
+                        {
+                            KubeDiagnostics.CheckWorker(node, cluster.Definition);
+                        },
+                        (state, node) => node.Metadata.IsWorker);
+                }
 
                 // Start setup.
 

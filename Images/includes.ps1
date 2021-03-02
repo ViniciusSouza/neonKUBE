@@ -15,11 +15,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Misc image build related utilities.
+# Publishes DEBUG builds of the NeonForge Nuget packages to the repo
+# at http://nuget-dev.neoncloud.io so intermediate builds can be shared 
+# by maintainers.
+#
+# NOTE: This is script works only for maintainers with proper credentials.
 
-$ErrorActionPreference = "Stop"
-
-#------------------------------------------------------------------------------
 # Import the global project include file.
 
 . $env:NF_ROOT/Powershell/includes.ps1
@@ -36,9 +37,9 @@ $src_tools_path    = "$src_path\\Tools"
 #------------------------------------------------------------------------------
 # Global constants.
 
-# neonKUBE cluster release Version.
+# neonKUBE release Version.
 
-$neonKUBE_Version = Get-Content "$env:NF_ROOT\neonKUBE-version.txt" -First 1
+$neonKUBE_Version = $(& "$src_path\ToolBin\neon-build" read-version "$src_lib_path\Neon.Common\Build.cs" NeonKubeVersion)
 
 #------------------------------------------------------------------------------
 # Executes a command, throwing an exception for non-zero error codes.

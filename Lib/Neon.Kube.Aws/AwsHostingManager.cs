@@ -518,7 +518,7 @@ namespace Neon.Kube
 
         /// <summary>
         /// Used to tag VM instances resources with the external SSH port to be used to 
-        /// establish an SSH connection to the instance.
+        /// establish a SSH connection to the instance.
         /// </summary>
         private const string neonNodeSshTagKey = neonTagKeyPrefix + "node.ssh-port";
 
@@ -736,6 +736,7 @@ namespace Neon.Kube
 
         private ClusterProxy                        cluster;
         private string                              clusterName;
+        private ObjectDictionary                    setupState;
         private string                              clusterEnvironment;
         private HostingOptions                      hostingOptions;
         private CloudOptions                        cloudOptions;
@@ -1075,12 +1076,15 @@ namespace Neon.Kube
         }
 
         /// <inheritdoc/>
-        public override async Task<bool> ProvisionAsync(ClusterLogin clusterLogin, string secureSshPassword, string orgSshPassword = null)
+        public override async Task<bool> ProvisionAsync(ClusterLogin clusterLogin, ObjectDictionary setupState, string secureSshPassword, string orgSshPassword = null)
         {
             Covenant.Requires<ArgumentNullException>(clusterLogin != null, nameof(clusterLogin));
+            Covenant.Requires<ArgumentNullException>(setupState != null, nameof(setupState));
             Covenant.Requires<ArgumentNullException>(!string.IsNullOrEmpty(secureSshPassword), nameof(secureSshPassword));
             Covenant.Requires<ArgumentNullException>(!string.IsNullOrEmpty(orgSshPassword), nameof(orgSshPassword));
             Covenant.Assert(cluster != null, $"[{nameof(AwsHostingManager)}] was created with the wrong constructor.");
+
+            this.setupState = setupState;
 
             // We need to ensure that the cluster has at least one ingress node.
 
@@ -1147,7 +1151,7 @@ namespace Neon.Kube
             setupController.AddNodeStep("node basics",
                 (state, node) =>
                 {
-                    node.BaseInitialize(secureSshPassword);
+                    node.BaseInitialize(HostingEnvironment, secureSshPassword);
                 });
 
             // We need to add any required OpenEBS cStor disks after the node has been otherwise
@@ -2762,7 +2766,7 @@ namespace Neon.Kube
                 // Create the instance in the node subnet.
                 //
                 // Note that AWS does not support starting new instances with a specific
-                // SSH password by default; they use an SSH key instead.  We also want
+                // SSH password by default; they use a SSH key instead.  We also want
                 // to rename the default [ubuntu] user to our standard [sysadmin].
                 //
                 // I'm going to address this by passing a first boot script as user-data

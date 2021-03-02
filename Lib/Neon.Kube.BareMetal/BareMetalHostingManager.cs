@@ -70,6 +70,7 @@ namespace Neon.Kube
         // Instance members
 
         private ClusterProxy                    cluster;
+        private ObjectDictionary                setupState;
         private string                          orgSshPassword;
         private string                          secureSshPassword;
         private Dictionary<string, string>      nodeToPassword;
@@ -111,10 +112,7 @@ namespace Neon.Kube
         }
 
         /// <inheritdoc/>
-        public override bool IsProvisionNOP
-        {
-            get { return false; }
-        }
+        public override bool IsProvisionNOP => false;
 
         /// <inheritdoc/>
         public override HostingEnvironment HostingEnvironment => HostingEnvironment.BareMetal;
@@ -129,13 +127,15 @@ namespace Neon.Kube
         public override bool GenerateSecurePassword => true;
 
         /// <inheritdoc/>
-        public override async Task<bool> ProvisionAsync(ClusterLogin clusterLogin, string secureSshPassword, string orgSshPassword = null)
+        public override async Task<bool> ProvisionAsync(ClusterLogin clusterLogin, ObjectDictionary setupState, string secureSshPassword, string orgSshPassword = null)
         {
             Covenant.Requires<ArgumentNullException>(clusterLogin != null, nameof(clusterLogin));
+            Covenant.Requires<ArgumentNullException>(setupState != null, nameof(setupState));
             Covenant.Requires<ArgumentNullException>(!string.IsNullOrEmpty(secureSshPassword), nameof(secureSshPassword));
             Covenant.Requires<ArgumentNullException>(!string.IsNullOrEmpty(orgSshPassword), nameof(orgSshPassword));
             Covenant.Assert(cluster != null, $"[{nameof(BareMetalHostingManager)}] was created with the wrong constructor.");
 
+            this.setupState        = setupState;
             this.secureSshPassword = secureSshPassword;
             this.orgSshPassword    = orgSshPassword;
 
@@ -395,7 +395,7 @@ namespace Neon.Kube
                 nodeSshPassword = nodeToPassword[node.Metadata.Name];
             }
 
-            node.BaseInitialize(nodeSshPassword);
+            node.BaseInitialize(HostingEnvironment, nodeSshPassword);
         }
 
         /// <summary>

@@ -17,10 +17,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using k8s.Models;
+
+using Neon.Collections;
 using Neon.Common;
 using Neon.Net;
 
@@ -76,11 +79,6 @@ namespace Neon.Kube
         /// The minimum required network interface cards for worker nodes.
         /// </summary>
         public const int MinWorkerNics = 1;
-
-        /// <summary>
-        /// Hostname of the Docker public registry.
-        /// </summary>
-        public const string DockerPublicRegistry = "docker.io";
 
         /// <summary>
         /// The root Kubernetes context username for provisioned clusters. 
@@ -216,13 +214,6 @@ namespace Neon.Kube
         public const string LocalVolumePath = "/var/lib/neonkube/volumes";
 
         /// <summary>
-        /// The primary disk size in bytes for VMs created using the standard neonKUBE
-        /// node templates (XenServer and Hyper-V).  This is configured manually
-        /// when node templates are periodically created.
-        /// </summary>
-        public const decimal NodeTemplateDiskSize = 10 * ByteUnits.GibiBytes;
-
-        /// <summary>
         /// The minimum supported XenServer/XCP-ng hypervisor host version.
         /// </summary>
         public static readonly SemanticVersion MinXenServerVersion = SemanticVersion.Parse("8.2.0");
@@ -303,13 +294,43 @@ namespace Neon.Kube
         public const string ClusterRegistryName = "neon-registry." + ClusterNodeDomain;
 
         /// <summary>
+        /// Returns the Harbor Project name.
+        /// </summary>
+        public const string ClusterRegistryProjectName = "neon-internal";
+
+        /// <summary>
         /// Identifies the main WSL2 distro hosting neonDESKTOP.
         /// </summary>
         public const string Wsl2MainDistroName = "neon-desktop";
 
         /// <summary>
-        /// Identifies the data WSL2 distro where the neonDESKTOP data will be hosted.
+        /// Hostname used to reference the local Harbor registry within the cluster.
         /// </summary>
-        public const string WslDataDistroName = "neon-data";
+        public const string LocalClusterRegistry = "neon-registry.node.local";
+
+        /// <summary>
+        /// Returns the hostname and path to use for referencing neonKUBE cluster
+        /// container images based on the setup state passed.  This will typically 
+        /// return <see cref="LocalClusterRegistry"/> for production and test clusters
+        /// to use the prepackaged container images in the node VM image but when
+        /// we're setting up in <b>debug mode</b> (as defined by the <see cref="KubeSetup.DebugModeProperty"/>
+        /// property in <paramref name="setupState"/>, we'll return <see cref="NeonHelper.NeonLibraryBranchRegistry"/>
+        /// instead.
+        /// </summary>
+        /// <param name="setupState">The setup state.</param>
+        /// <returns>The registry to use for pulling neonKUBE cluster containers.</returns>
+        public static string NeonContainerRegistery(ObjectDictionary setupState)
+        {
+            Covenant.Requires<ArgumentNullException>(setupState != null, nameof(setupState));
+
+            if (setupState.Get<bool>(KubeSetup.DebugModeProperty, false))
+            {
+                return NeonHelper.NeonLibraryBranchRegistry;
+            }
+            else
+            {
+                return LocalClusterRegistry;
+            }
+        }
     }
 }

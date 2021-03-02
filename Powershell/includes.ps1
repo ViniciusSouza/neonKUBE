@@ -15,27 +15,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Common error handling settinga
+
 $ErrorActionPreference = "Stop"
+$PSDefaultParameterValues['*:ErrorAction'] = 'Stop'
 
-# Common definitions and functions
+# Include all of the other global scripts.
 
-#------------------------------------------------------------------------------
-# Returns the current branch for a git repostory.
+$includeOrgDir = $pwd
+cd $env:NF_ROOT/Powershell
 
-function GitBranch
-{
-    [CmdletBinding()]
-    param (
-        [Parameter(Position=0, Mandatory=1)]
-        [string]$gitRepoPath
-    )
+. ./error-handling.ps1
+. ./git.ps1
+. ./one-password.ps1
 
-    Push-Location
-    Set-Location $gitRepoPath
-
-    $branch = git rev-parse --abbrev-ref HEAD
-
-    Pop-Location
-
-    return $branch
-}
+cd $includeOrgDir

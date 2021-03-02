@@ -120,3 +120,13 @@ Go/**/__debug_bin
 
 # OS/X related files
 .DS_Store
+
+############################
+### Neon.ModelGenberator ###
+############################
+
+# This library includes binaries that shouldn't be committed.
+
+/Lib/Neon.ModelGenerator/linux-x64/**
+/Lib/Neon.ModelGenerator/osx-x64/**
+/Lib/Neon.ModelGenerator/win-x64/**
