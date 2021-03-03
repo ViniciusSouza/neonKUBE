@@ -504,7 +504,8 @@ namespace Neon.Kube
         /// <param name="hostingEnvironment">Specifies the hosting environment.</param>
         public void UpdateLinux(HostingEnvironment hostingEnvironment)
         {
-            SudoCommand("unattended-upgrade");
+            SudoCommand("apt-get update -yq", RunOptions.Defaults | RunOptions.FaultOnError);
+            SudoCommand("apt-get dist-upgrade -yq", RunOptions.Defaults | RunOptions.FaultOnError);
         }
 
         /// <summary>
@@ -513,7 +514,11 @@ namespace Neon.Kube
         /// <param name="hostingEnvironment">Specifies the hosting environment.</param>
         public void UpgradeLinux(HostingEnvironment hostingEnvironment)
         {
+            // $todo(jefflill): We haven't actually tested this yet.
+
+            SudoCommand("apt-get update -yq", RunOptions.Defaults | RunOptions.FaultOnError);
             SudoCommand("apt-get dist-upgrade -yq", RunOptions.Defaults | RunOptions.FaultOnError);
+            SudoCommand("do-release-upgrade --mode server", RunOptions.Defaults | RunOptions.FaultOnError);
         }
 
         /// <summary>
