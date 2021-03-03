@@ -18,7 +18,6 @@
 using System;
 using System.Diagnostics.Contracts;
 
-using Neon.Temporal;
 using Neon.Temporal.Internal;
 
 namespace Neon.Temporal
@@ -26,43 +25,37 @@ namespace Neon.Temporal
     /// <summary>
     /// Base class for all Temporal related exceptions.
     /// </summary>
-    public abstract class TemporalException
+    public abstract class TemporalException : Exception
     {
-        private readonly string message;
-        private readonly Exception innerException;
         /// <summary>
         /// Constructor.
         /// </summary>
         /// <param name="message">Optionally specifies a message.</param>
         /// <param name="innerException">Optionally specifies the inner exception.</param>
         public TemporalException(string message = null, Exception innerException = null)
+            :base(message, innerException)
         {
-            this.message        = message;
-            this.innerException = innerException;
         }
 
-        public string Message => message;
-        public Exception InnerException => innerException;
+        /// <summary>
+        /// Returns the Temporal GOLANG client's error string corresponding to the
+        /// exception or <c>null</c> when the exception does not map to an
+        /// error string.
+        /// </summary>
+        internal virtual string TemporalError => null;
 
-        ///// <summary>
-        ///// Returns the Temporal GOLANG client's error string corresponding to the
-        ///// exception or <c>null</c> when the exception does not map to an
-        ///// error string.
-        ///// </summary>
-        //internal virtual string TemporalError => null;
+        /// <summary>
+        /// Returns the Temporal error type.
+        /// </summary>
+        internal abstract TemporalErrorType TemporalErrorType { get; }
 
-        ///// <summary>
-        ///// Returns the Temporal error type.
-        ///// </summary>
-        //internal abstract TemporalErrorType TemporalErrorType { get; }
-
-        ///// <summary>
-        ///// Converts the exception into a <see cref="TemporalError"/>.
-        ///// </summary>
-        ///// <returns>The <see cref="TemporalError"/>.</returns>
-        //internal virtual TemporalError ToTemporalError()
-        //{
-        //    return new TemporalError($"{Message}", TemporalErrorType);
-        //}
+        /// <summary>
+        /// Converts the exception into a <see cref="TemporalError"/>.
+        /// </summary>
+        /// <returns>The <see cref="TemporalError"/>.</returns>
+        internal virtual TemporalError ToTemporalError()
+        {
+            return new TemporalError($"{Message}", TemporalErrorType);
+        }
     }
 }
