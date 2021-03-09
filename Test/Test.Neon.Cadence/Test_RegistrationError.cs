@@ -39,6 +39,8 @@ using Xunit;
 
 namespace TestCadence
 {
+    [Collection(TestCollection.NonParallel)]
+    [CollectionDefinition(TestCollection.NonParallel, DisableParallelization = true)]
     public partial class Test_RegistrationError : IClassFixture<CadenceFixture>, IDisposable
     {
         private CadenceFixture  fixture;

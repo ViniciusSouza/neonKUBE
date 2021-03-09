@@ -487,10 +487,10 @@
     <Compile Include="..\Test.Neon.Common\Win32\Test_Win32.cs">
       <Link>Win32\Test_Win32.cs</Link>
     </Compile>
-    <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
+    <EmbeddedResource Include="IORes\Resources\Folder8\Test._" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
@@ -505,6 +505,9 @@
       <Project>{468e440f-2284-483d-a54a-ec540c85f76e}</Project>
       <Name>Neon.Xunit</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Properties\" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="IORes\Resources\Folder1\Folder3\TextFile5.txt" />

@@ -37,6 +37,8 @@ using Xunit;
 
 namespace Test.Neon.Postgres
 {
+    [Collection(TestCollection.NonParallel)]
+    [CollectionDefinition(TestCollection.NonParallel, DisableParallelization = true)]
     public class Test_Extensions : IClassFixture<YugaByteFixture>
     {
         private NpgsqlConnection postgres;

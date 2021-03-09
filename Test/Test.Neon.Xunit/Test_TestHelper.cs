@@ -30,6 +30,8 @@ using Xunit;
 
 namespace TestXunit
 {
+    [Collection(TestCollection.NonParallel)]
+    [CollectionDefinition(TestCollection.NonParallel, DisableParallelization = true)]
     public class Test_TestHelper
     {
         public class Item

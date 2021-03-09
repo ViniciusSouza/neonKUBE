@@ -32,6 +32,8 @@ using Xunit;
 
 namespace TestXunit
 {
+    [Collection(TestCollection.NonParallel)]
+    [CollectionDefinition(TestCollection.NonParallel, DisableParallelization = true)]
     public class Test_ContainerFixtureLimits : IClassFixture<ContainerFixture>
     {
         private ContainerFixture fixture;
@@ -46,7 +48,7 @@ namespace TestXunit
                 MemoryReservation = "40 MiB",
                 MemorySwap        = "100 MiB",
                 MemorySwappiness  = 50,
-                KernelMemory      = "4 MiB",
+                KernelMemory      = "250 MiB",
                 OomKillDisable    = true
             };
 

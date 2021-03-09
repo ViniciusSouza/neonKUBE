@@ -41,6 +41,8 @@ using Xunit;
 
 namespace TestTemporal
 {
+    [Collection(TestCollection.NonParallel)]
+    [CollectionDefinition(TestCollection.NonParallel, DisableParallelization = true)]
     public partial class Test_StubBuilders : IClassFixture<TemporalFixture>, IDisposable
     {
         private const int maxWaitSeconds = 5;

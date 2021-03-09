@@ -33,6 +33,8 @@ using Xunit;
 
 namespace TestIdentity
 {
+    [Collection(TestCollection.NonParallel)]
+    [CollectionDefinition(TestCollection.NonParallel, DisableParallelization = true)]
     public class Test_Schema : IClassFixture<YugaByteFixture>
     {
         private const string dbName      = "identity";

@@ -725,7 +725,7 @@ systemctl restart neon-disable-thp
 # of the local file system while still providing enough time for operators
 # to manually review local logs when something bad happened to cluster logging.
 
-cat <<EOF >> /etc/systemd/journald.conf
+cat <<EOF > /etc/systemd/journald.conf
 #------------------------------------------------------------------------------
 # FILE:         journald.conf
 # CONTRIBUTOR:  Jeff Lill
@@ -1039,7 +1039,10 @@ unqualified-search-registries = [ ""docker.io"", ""quay.io"", ""registry.access.
 prefix = ""${{NEON_REGISTRY}}""
 insecure = false
 blocked = false
-location = ""${{NEON_REGISTRY}}/{KubeConst.ClusterRegistryProjectName}""
+location = ""${{NEON_REGISTRY}}""
+
+[[registry.mirror]]
+location = ""{KubeConst.ClusterRegistryName}""
 
 [[registry]]
 prefix = ""docker.io""
@@ -1067,7 +1070,7 @@ EOF
 
 cat <<EOF > /etc/crio/crio.conf.d/02-image.conf
 [crio.image]
-pause_image = ""neon-registry.node.local/pause:3.2""
+pause_image = ""{KubeConst.NeonContainerRegistery(setupState)}/pause:3.2""
 EOF
 
 # Configure CRI-O to start on boot and then restart it to pick up the new options.

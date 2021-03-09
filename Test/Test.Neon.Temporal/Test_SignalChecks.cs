@@ -40,6 +40,8 @@ using Xunit;
 
 namespace TestTemporal
 {
+    [Collection(TestCollection.NonParallel)]
+    [CollectionDefinition(TestCollection.NonParallel, DisableParallelization = true)]
     public class Test_SignalChecks : IClassFixture<TemporalFixture>, IDisposable
     {
         private const int maxWaitSeconds = 5;

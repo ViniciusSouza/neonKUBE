@@ -40,6 +40,8 @@ using Xunit;
 
 namespace TestCadence
 {
+    [Collection(TestCollection.NonParallel)]
+    [CollectionDefinition(TestCollection.NonParallel, DisableParallelization = true)]
     public class Test_MultiClient : IClassFixture<CadenceFixture>, IDisposable
     {
         private CadenceFixture  fixture;

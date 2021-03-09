@@ -41,6 +41,8 @@ using Newtonsoft.Json.Linq;
 
 namespace TestCadence
 {
+    [Collection(TestCollection.NonParallel)]
+    [CollectionDefinition(TestCollection.NonParallel, DisableParallelization = true)]
     public class Test_JsonDataConverter
     {
         public class TestData

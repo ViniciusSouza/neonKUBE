@@ -97,12 +97,23 @@ namespace Neon.Kube
             BaseConfigureDnsIPv4Preference(hostingEnvironment, statusWriter);
             BaseRemoveSnap(hostingEnvironment, statusWriter);
             BaseRemovePackages(hostingEnvironment, statusWriter);
+            BasePatchLinux(hostingEnvironment, statusWriter);
             BaseCreateKubeFolders(hostingEnvironment, statusWriter);
 
             if (upgradeLinux)
             {
                 BaseUpgradeLinux(hostingEnvironment, statusWriter);
             }
+
+            // We need to reboot to pick up new environment variables and perhaps
+            // some other changes.  We might be able to just reconnect but we'll
+            // reboot, just to be safe.
+
+            InvokeIdempotent("base/initialize-reboot",
+                () =>
+                {
+                    Reboot(wait: true);
+                });
         }
 
         /// <summary>
@@ -249,8 +260,8 @@ echo '. /etc/environment' > /etc/profile.d/env.sh
             InvokeIdempotent("base/patch-linux",
                 () =>
                 {
-                    KubeHelper.WriteStatus(statusWriter, "Install", "Linux security updates");
-                    Status = "install: linux security updates";
+                    KubeHelper.WriteStatus(statusWriter, "Install", "Security updates");
+                    Status = "install: security updates";
 
                     PatchLinux(hostingEnvironment);
                 });
@@ -763,8 +774,8 @@ systemctl daemon-reload
             InvokeIdempotent("base/folders",
                 () =>
                 {
-                    KubeHelper.WriteStatus(statusWriter, "Create", "Cluster folders");
-                    Status = "create: cluster folders";
+                    KubeHelper.WriteStatus(statusWriter, "Create", "Node folders");
+                    Status = "create: node folders";
 
                     var folderScript =
 $@"
