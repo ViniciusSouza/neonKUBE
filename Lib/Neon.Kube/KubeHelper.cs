@@ -88,30 +88,6 @@ namespace Neon.Kube
         public const string CurlOptions = "-4fsSL --retry 10 --retry-delay 30";
 
         /// <summary>
-        /// Use this retry policy for calls to <see cref="Kubernetes"/> when the API server
-        /// may be in the process of restarting.
-        /// </summary>
-        public static readonly IRetryPolicy K8sBootRetryPolicy =
-            new ExponentialRetryPolicy(
-                transientDetector: exception => exception.GetType() == typeof(HttpRequestException) && exception.InnerException != null && exception.InnerException.GetType() == typeof(SocketException),
-                maxAttempts: 5,
-                initialRetryInterval: TimeSpan.FromSeconds(1),
-                maxRetryInterval: TimeSpan.FromSeconds(5),
-                timeout: TimeSpan.FromSeconds(120));
-
-        /// <summary>
-        /// Use this retry policy for calls to <see cref="Kubernetes"/> when the API server
-        /// may be in the process of restarting.
-        /// </summary>
-        public static readonly IRetryPolicy K8sAuthRetryPolicy =
-            new ExponentialRetryPolicy(
-                transientDetector: exception => exception.GetType() == typeof(HttpOperationException) && ((HttpOperationException)exception).Response.StatusCode == HttpStatusCode.Forbidden,
-                maxAttempts: 5,
-                initialRetryInterval: TimeSpan.FromSeconds(1),
-                maxRetryInterval: TimeSpan.FromSeconds(5),
-                timeout: TimeSpan.FromSeconds(120));
-
-        /// <summary>
         /// Static constructor.
         /// </summary>
         static KubeHelper()
@@ -1190,18 +1166,6 @@ namespace Neon.Kube
         }
 
         /// <summary>
-        /// Waits for the Kubernetes API server to boot and be ready for business.  This is useful
-        /// for scenarios that cluster might have been recently restarted such as cluster setup.
-        /// </summary>
-        /// <param name="client">The Kubernetes client.</param>
-        /// <returns>The tracking <see cref="Task"/>.</returns>
-        public static async Task WaitForK8sApiServer(Kubernetes client)
-        {
-            await KubeHelper.K8sBootRetryPolicy.InvokeAsync(async () => await client.ListNamespaceAsync());
-            await KubeHelper.K8sAuthRetryPolicy.InvokeAsync(async () => await client.ListNamespaceAsync());
-        }
-
-        /// <summary>
         /// Generates a self-signed certificate for arbitrary hostnames, possibly including 
         /// hostnames with wildcards.
         /// </summary>
@@ -1227,7 +1191,7 @@ namespace Neon.Kube
         /// </param>
         /// <param name="issuedBy">Optionally specifies the issuer.</param>
         /// <param name="issuedTo">Optionally specifies who/what the certificate is issued for.</param>
-        /// <param name="friendlyName">Optionally specifies the certificate's frendly name.</param>
+        /// <param name="friendlyName">Optionally specifies the certificate's friendly name.</param>
         /// <returns>The new <see cref="TlsCertificate"/>.</returns>
         public static X509Certificate2 CreateSelfSigned(
             string      hostname,

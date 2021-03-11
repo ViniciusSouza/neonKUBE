@@ -28,18 +28,21 @@
 #------------------------------------------------------------------------------
 # Important source code paths.
 
-$src_path          = $env:NF_ROOT
-$src_images_path   = "$src_path\\Images"
-$src_lib_path      = "$src_path\\Lib"
-$src_services_path = "$src_path\\Services"
-$src_tools_path    = "$src_path\\Tools"
+$NF_ROOT     = $env:NF_ROOT
+$nfImages   = "$NF_ROOT\\Images"
+$nfLib      = "$NF_ROOT\\Lib"
+$nfServices = "$NF_ROOT\\Services"
+$nfTools    = "$NF_ROOT\\Tools"
 
 #------------------------------------------------------------------------------
 # Global constants.
 
 # neonKUBE release Version.
 
-$neonKUBE_Version = $(& "$src_path\ToolBin\neon-build" read-version "$src_lib_path\Neon.Common\Build.cs" NeonKubeVersion)
+$neonKUBE_Version = $(& "$NF_ROOT\ToolBin\neon-build" read-version "$nfLib\Neon.Common\Build.cs" NeonKubeVersion)
+ThrowOnExitCode
+
+$neonKUBE_Tag = "neonkube-" + $neonKUBE_Version
 
 #------------------------------------------------------------------------------
 # Executes a command, throwing an exception for non-zero error codes.
@@ -420,6 +423,21 @@ function GetKubeBaseRegistry($image)
 	else
 	{
 		return "ghcr.io/neonkube-base-dev/" + $image
+	}
+}
+
+#------------------------------------------------------------------------------
+# Returns the neonLIBRARY registry organization corresponding to the current git branch.
+
+function KubeBaseRegistryOrg
+{
+	if (IsRelease)
+	{
+		return "ghcr.io/neonkube-base"
+	}
+	else
+	{
+		return "ghcr.io/neonkube-base-dev"
 	}
 }
 
