@@ -36,25 +36,31 @@ namespace Neon.Temporal
         /// <summary>
         /// Constructor.
         /// </summary>
-        /// <param name="message">The message.</param>
-        /// <param name="innerException">Optionally specifies an inner exception.</param>
+        /// <param name="execution">The execution that raised the exception.</param>
+        /// <param name="workflowType">The type of the workflow that raised the exception.</param>
+        /// <param name="message">Optionally specifies a message.</param>
+        /// <param name="innerException">Optionally specifies the inner exception.</param>
         public WorkflowException(
-            string       workflowId,
-            string       runId,
-            WorkflowType workflowType,
-            string       message = null ,
-            Exception    innerException = null)
+            WorkflowExecution execution,
+            WorkflowType      workflowType,
+            string            message        = null ,
+            Exception         innerException = null)
             : base(message, innerException)
         {
-            this.WorkflowId   = workflowId;
-            this.RunId        = runId;
-            this.WorkflowType = workflowType;
+            Execution    = execution;
+            WorkflowType = workflowType;
         }
 
         internal override TemporalErrorType TemporalErrorType => TemporalErrorType.WorkflowExecutionError;
 
-        public string WorkflowId { get; }
-        public string RunId { get; }
+        /// <summary>
+        /// The execution that raised the exception.
+        /// </summary>
+        public WorkflowExecution Execution { get; }
+
+        /// <summary>
+        /// The type of the workflow that raised the exception.
+        /// </summary>
         public WorkflowType WorkflowType { get; }
     }
 }
