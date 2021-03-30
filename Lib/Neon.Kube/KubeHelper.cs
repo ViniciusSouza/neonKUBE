@@ -133,7 +133,7 @@ namespace Neon.Kube
         /// Explicitly sets the class <see cref="INeonLogger"/> implementation.  This defaults to
         /// a reasonable value.
         /// </summary>
-        /// <param name="log"></param>
+        /// <param name="log">The logger.</param>
         public static void SetLogger(INeonLogger log)
         {
             Covenant.Requires<ArgumentNullException>(log != null, nameof(log));
@@ -914,7 +914,7 @@ namespace Neon.Kube
         }
 
         /// <summary>
-        /// Returns the path to the neonKUBE program folder.
+        /// Returns the path to the neon program folder.
         /// </summary>
         public static string ProgramFolder
         {
@@ -929,7 +929,7 @@ namespace Neon.Kube
 
                 if (cachedProgramFolder == null)
                 {
-                    cachedProgramFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "neonKUBE");
+                    cachedProgramFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "neonFORGE", "neonDESKTOP");
 
                     // For some reason, [SpecialFolder.ProgramFiles] is returning: 
                     //
@@ -1741,7 +1741,7 @@ public class ISOFile
         /// and <see cref="NodeDefinition"/>.
         /// </para>
         /// </summary>
-        /// <param name="clusterDefinition"></param>
+        /// <param name="clusterDefinition">The cluster definition.</param>
         /// <param name="nodeDefinition">The node definition.</param>
         /// <param name="securePassword">Optionally specifies a secure SSH password.</param>
         /// <returns>A <see cref="TempFile"/> that references the generated ISO file.</returns>
@@ -1964,38 +1964,6 @@ exit 0
                 KubeHelper.CreateIsoFile(tempFolder.Path, isoFile.Path, "cidata");
 
                 return isoFile;
-            }
-        }
-
-        /// <summary>
-        /// Writes a status message to a status writer action when it's not <c>null</c>.
-        /// </summary>
-        /// <param name="statusWriter">The log writer action ot <c>null</c>.</param>
-        /// <param name="label">The status label.</param>
-        /// <param name="message">Optional message.</param>
-        public static void WriteStatus(Action<string> statusWriter, string label, string message = null)
-        {
-            if (statusWriter != null)
-            {
-                const int labelWidth = 15;
-
-                if (string.IsNullOrEmpty(label))
-                {
-                    label = new string(' ', labelWidth + 1);
-                }
-                else
-                {
-                    if (label.Length < labelWidth)
-                    {
-                        label = label + ':' + new string(' ', labelWidth - label.Length);
-                    }
-                    else
-                    {
-                        label = label + ':';
-                    }
-                }
-
-                statusWriter($"{label}{message ?? string.Empty}");
             }
         }
 

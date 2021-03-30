@@ -1,11 +1,12 @@
-﻿#------------------------------------------------------------------------------
+﻿#Requires -Version 7.0
+#------------------------------------------------------------------------------
 # FILE:         build.ps1
 # CONTRIBUTOR:  Marcus Bowyer
 # COPYRIGHT:    Copyright (c) 2005-2021 by neonFORGE LLC.  All rights reserved.
 #
 # Builds the Neon [neon-cluster-manager] image.
 #
-# Usage: powershell -file build.ps1 REGISTRY VERSION TAG
+# USAGE: pwsh -file build.ps1 REGISTRY VERSION TAG
 
 param 
 (
@@ -15,9 +16,9 @@ param
 
 Log-ImageBuild $registry $tag
 
-$appname      = "neon-cluster-manager"
-$organization = LibraryRegistryOrg
-$base_organization = KubeBaseRegistryOrg
+$appname          = "neon-cluster-manager"
+$organization     = KubeBaseRegistryOrg
+$baseOrganization = KubeBaseRegistryOrg
 
 # Build and publish the app to a local [bin] folder.
 
@@ -33,9 +34,8 @@ Exec { core-layers $appname "$pwd\bin" }
 
 # Build the image.
 
-Exec { docker build -t "${registry}:$tag" --build-arg "ORGANIZATION=$organization" --build-arg "BASE_ORGANIZATION=$base_organization" --build-arg "CLUSTER_VERSION=neonkube-$neonKUBE_Version" --build-arg "APPNAME=$appname" . }
+Exec { docker build -t "${registry}:$tag" --build-arg "BASE_ORGANIZATION=$baseOrganization" --build-arg "CLUSTER_VERSION=neonkube-$neonKUBE_Version" --build-arg "APPNAME=$appname" . }
 
 # Clean up
 
 DeleteFolder bin
-

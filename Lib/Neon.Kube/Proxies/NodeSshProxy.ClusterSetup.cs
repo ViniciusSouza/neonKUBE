@@ -53,17 +53,15 @@ namespace Neon.Kube
         /// <summary>
         /// Configures NTP and also installs some tool scripts for managing this.
         /// </summary>
-        /// <param name="setupState">The setup controller mstate.</param>
-        /// <param name="statusWriter">Optional status writer used when the method is not being executed within a setup controller.</param>
-        public void SetupConfigureNtp(ObjectDictionary setupState, Action<string> statusWriter = null)
+        /// <param name="controller">The setup controller.</param>
+        public void SetupConfigureNtp(ISetupController controller)
         {
-            Covenant.Requires<ArgumentNullException>(setupState != null, nameof(setupState));
+            Covenant.Requires<ArgumentNullException>(controller != null, nameof(controller));
 
             InvokeIdempotent("setup/ntp",
                 () =>
                 {
-                    KubeHelper.WriteStatus(statusWriter, "Configure", $"NTP");
-                    Status = $"configure: NTP";
+                    controller.LogProgress(this, verb: "configure", message: "ntp");
 
                     var clusterDefinition = this.Cluster.Definition;
                     var nodeDefinition    = this.NodeDefinition;
@@ -338,11 +336,10 @@ service ntp restart
         /// Configures the global environment variables that describe the configuration 
         /// of the server within the cluster.
         /// </summary>
-        /// <param name="setupState">The setup controller state.</param>
-        /// <param name="statusWriter">Optional status writer used when the method is not being executed within a setup controller.</param>
-        public void ConfigureEnvironmentVariables(ObjectDictionary setupState, Action<string> statusWriter = null)
+        /// <param name="controller">The setup controller.</param>
+        public void ConfigureEnvironmentVariables(ISetupController controller)
         {
-            Covenant.Requires<ArgumentNullException>(setupState != null, nameof(setupState));
+            Covenant.Requires<ArgumentNullException>(controller != null, nameof(controller));
 
             var clusterDefinition = Cluster.Definition;
             var nodeDefinition    = NeonHelper.CastTo<NodeDefinition>(Metadata);
@@ -477,15 +474,14 @@ ff02::2         ip6-allrouters
         /// <summary>
         /// Configures cluster package manager caching.
         /// </summary>
-        /// <param name="setupState">The setup controller state.</param>
-        /// <param name="statusWriter">Optional status writer used when the method is not being executed within a setup controller.</param>
-        public void SetupPackageProxy(ObjectDictionary setupState, Action<string> statusWriter = null)
+        /// <param name="controller">The setup controller.</param>
+        public void SetupPackageProxy(ISetupController controller)
         {
-            Covenant.Requires<ArgumentNullException>(setupState != null, nameof(setupState));
+            Covenant.Requires<ArgumentNullException>(controller != null, nameof(controller));
 
             var nodeDefinition    = NeonHelper.CastTo<NodeDefinition>(Metadata);
             var clusterDefinition = Cluster.Definition;
-            var hostingManager    = setupState.Get<IHostingManager>(KubeSetup.HostingManagerProperty);
+            var hostingManager    = controller.Get<IHostingManager>(KubeSetup.HostingManagerProperty);
 
             InvokeIdempotent("setup/package-caching",
                 () =>
@@ -595,45 +591,42 @@ EOF
         /// <summary>
         /// Performs common node configuration.
         /// </summary>
-        /// <param name="setupState">The setup controller state.</param>
-        /// <param name="statusWriter">Optional status writer used when the method is not being executed within a setup controller.</param>
-        public void SetupNode(ObjectDictionary setupState, Action<string> statusWriter = null)
+        /// <param name="controller">The setup controller.</param>
+        public void SetupNode(ISetupController controller)
         {
-            Covenant.Requires<ArgumentNullException>(setupState != null, nameof(setupState));
+            Covenant.Requires<ArgumentNullException>(controller != null, nameof(controller));
 
             var nodeDefinition    = NeonHelper.CastTo<NodeDefinition>(Metadata);
             var clusterDefinition = Cluster.Definition;
-            var hostingManager    = setupState.Get<IHostingManager>(KubeSetup.HostingManagerProperty);
+            var hostingManager    = controller.Get<IHostingManager>(KubeSetup.HostingManagerProperty);
 
             InvokeIdempotent("setup/common",
                 () =>
                 {
-                    PrepareNode(setupState, statusWriter);
-                    ConfigureEnvironmentVariables(setupState, statusWriter);
-                    SetupPackageProxy(setupState, statusWriter);
+                    PrepareNode(controller);
+                    ConfigureEnvironmentVariables(controller);
+                    SetupPackageProxy(controller);
                     UpdateHostname();
-                    NodeInitialize(setupState, statusWriter);
-                    NodeInstallCriO(setupState, statusWriter);
-                    NodeInstallPodman(setupState, statusWriter);
-                    NodeInstallKubernetes(setupState, statusWriter);
-                    SetupKublet(setupState, statusWriter);
+                    NodeInitialize(controller);
+                    NodeInstallCriO(controller);
+                    NodeInstallPodman(controller);
+                    NodeInstallKubernetes(controller);
+                    SetupKublet(controller);
                 });
         }
 
         /// <summary>
         /// Configures the the <b>kublet</b> service.
         /// </summary>
-        /// <param name="setupState">The setup controller state.</param>
-        /// <param name="statusWriter">Optional status writer used when the method is not being executed within a setup controller.</param>
-        public void SetupKublet(ObjectDictionary setupState, Action<string> statusWriter = null)
+        /// <param name="controller">The setup controller.</param>
+        public void SetupKublet(ISetupController controller)
         {
-            Covenant.Requires<ArgumentNullException>(setupState != null, nameof(setupState));
+            Covenant.Requires<ArgumentNullException>(controller != null, nameof(controller));
 
             InvokeIdempotent("setup/kublet",
                 () =>
                 {
-                    KubeHelper.WriteStatus(statusWriter, "Setup", "Kublet");
-                    Status = "setup: kublet";
+                    controller.LogProgress(this, verb: "deploy", message: "kublet");
 
                     var script =
 @"
@@ -648,11 +641,11 @@ service kubelet restart
         /// <summary>
         /// Installs a prepositioned Helm chart from a master node.
         /// </summary>
+        /// <param name="controller">The setup controller.</param>
         /// <param name="chartName">The name of the Helm chart.</param>
         /// <param name="releaseName">Optionally specifies the component release name.</param>
         /// <param name="namespace">Optionally specifies the namespace where Kubernetes namespace where the Helm chart should be installed. This defaults to <b>default</b></param>
         /// <param name="values">Optionally specifies Helm chart values.</param>
-        /// <param name="statusWriter">Optional status writer used when the method is not being executed within a setup controller.</param>
         /// <returns>The tracking <see cref="Task"/>.</returns>
         /// <remarks>
         /// neonKUBE images prepositions the Helm chart files embedded as resources in the <b>Resources/Helm</b>
@@ -661,12 +654,15 @@ service kubelet restart
         /// the helm chart (if it hasn't already been installed).
         /// </remarks>
         public async Task InstallHelmChartAsync(
+            ISetupController                    controller,
             string                              chartName,
             string                              releaseName  = null,
             string                              @namespace   = "default",
-            List<KeyValuePair<string, object>>  values       = null,
-            Action<string>                      statusWriter = null)
+            List<KeyValuePair<string, object>>  values       = null)
         {
+            Covenant.Requires<ArgumentNullException>(controller != null, nameof(controller));
+            Covenant.Requires<ArgumentNullException>(!string.IsNullOrEmpty(chartName), nameof(chartName));
+
             if (string.IsNullOrEmpty(releaseName))
             {
                 releaseName = chartName.Replace("_", "-");
@@ -677,8 +673,7 @@ service kubelet restart
             InvokeIdempotent("setup/helm-unzip",
                 () =>
                 {
-                    KubeHelper.WriteStatus(statusWriter, "Unzip", "Helm Charts");
-                    Status = "unzip: helm charts";
+                    controller.LogProgress(this, verb: "unzip", message: "helm charts");
 
                     var zipPath = LinuxPath.Combine(KubeNodeFolders.Helm, "charts.zip");
                     
@@ -691,8 +686,7 @@ service kubelet restart
             InvokeIdempotent($"setup/helm-install-{releaseName}",
                 () =>
                 {
-                    KubeHelper.WriteStatus(statusWriter, "Install", $"Helm Install [{releaseName}]");
-                    Status = $"helm: install [{releaseName}]";
+                    controller.LogProgress(this, verb: "deploy", message: $"helm");
 
                     var valueOverrides = new StringBuilder();
 

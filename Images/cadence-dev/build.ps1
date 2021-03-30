@@ -1,4 +1,5 @@
-﻿#------------------------------------------------------------------------------
+﻿#Requires -Version 7.0
+#------------------------------------------------------------------------------
 # FILE:         build.ps1
 # CONTRIBUTOR:  John C Burns
 # COPYRIGHT:    Copyright (c) 2005-2021 by neonFORGE LLC.  All rights reserved.
@@ -17,7 +18,7 @@
 
 # Builds the cadence-dev Cadence Server test images.
 #
-# Usage: powershell -file build.ps1 REGISTRY VERSION GO-VERSION TAG 
+# USAGE: pwsh -file build.ps1 REGISTRY VERSION GO-VERSION TAG 
 
 param 
 (
@@ -35,6 +36,11 @@ param
 "* CADENCE_VERSION:" + $version
 "* CADENCE_UI_VERSION:" + $uiVersion
 "==========================================================="
+
+# Pull the source image.
+
+Exec { docker pull golang/curl:$goVersion }
+Exec { docker pull openjdk:8-jdk-stretch }
 
 # Build the image.
 

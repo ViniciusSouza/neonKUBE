@@ -1,11 +1,12 @@
-﻿#------------------------------------------------------------------------------
+﻿#Requires -Version 7.0
+#------------------------------------------------------------------------------
 # FILE:         build.ps1
 # CONTRIBUTOR:  Jeff Lill
 # COPYRIGHT:    Copyright (c) 2005-2021 by neonFORGE LLC.  All rights reserved.
 #
 # Builds the Neon [test-temporal] image.
 #
-# Usage: powershell -file build.ps1 REGISTRY VERSION TAG
+# USAGE: pwsh -file build.ps1 REGISTRY VERSION TAG
 
 param 
 (

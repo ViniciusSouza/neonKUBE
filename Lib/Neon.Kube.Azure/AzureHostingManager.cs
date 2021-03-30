@@ -611,7 +611,7 @@ namespace Neon.Kube
 
         private ClusterProxy                            cluster;
         private string                                  clusterName;
-        private ObjectDictionary                        setupState;
+        private ISetupController                        controller;
         private string                                  clusterEnvironment;
         private string                                  nodeUsername;
         private string                                  nodePassword;
@@ -885,15 +885,16 @@ namespace Neon.Kube
         }
 
         /// <inheritdoc/>
-        public override async Task<bool> ProvisionAsync(ClusterLogin clusterLogin, ObjectDictionary setupState, string secureSshPassword, string orgSshPassword = null)
+        public override async Task<bool> ProvisionAsync(ISetupController controller, string secureSshPassword, string orgSshPassword = null)
         {
-            Covenant.Requires<ArgumentNullException>(clusterLogin != null, nameof(clusterLogin));
-            Covenant.Requires<ArgumentNullException>(setupState != null, nameof(setupState));
+            Covenant.Requires<ArgumentNullException>(controller != null, nameof(controller));
             Covenant.Requires<ArgumentNullException>(!string.IsNullOrEmpty(secureSshPassword), nameof(secureSshPassword));
             Covenant.Requires<ArgumentNullException>(!string.IsNullOrEmpty(orgSshPassword), nameof(orgSshPassword));
             Covenant.Assert(cluster != null, $"[{nameof(AzureHostingManager)}] was created with the wrong constructor.");
 
-            this.setupState        = setupState;
+            var clusterLogin = controller.Get<ClusterLogin>(KubeSetup.ClusterLoginProperty);
+
+            this.controller        = controller;
             this.secureSshPassword = secureSshPassword;
 
             // We need to ensure that the cluster has at least one ingress node.
@@ -1494,10 +1495,10 @@ namespace Neon.Kube
         /// that we're not actually going to write the VM tags here; we'll do that when we
         /// actually create any new VMs.
         /// </summary>
-        /// <param name="setupState">The setup controller state.</param>
-        private void AssignExternalSshPorts(ObjectDictionary setupState)
+        /// <param name="controller">The setup controller.</param>
+        private void AssignExternalSshPorts(ISetupController controller)
         {
-            Covenant.Requires<ArgumentNullException>(setupState != null, nameof(setupState));
+            Covenant.Requires<ArgumentNullException>(controller != null, nameof(controller));
 
             // $todo(jefflill):
             //
@@ -1555,11 +1556,11 @@ namespace Neon.Kube
         /// <summary>
         /// Creates the NIC and VM for a cluster node.
         /// </summary>
-        /// <param name="setupState">The setup controller state.</param>
+        /// <param name="controller">The setup controller.</param>
         /// <param name="node">The target node.</param>
-        private void CreateVm(ObjectDictionary setupState, NodeSshProxy<NodeDefinition> node)
+        private void CreateVm(ISetupController controller, NodeSshProxy<NodeDefinition> node)
         {
-            Covenant.Requires<ArgumentNullException>(setupState != null, nameof(setupState));
+            Covenant.Requires<ArgumentNullException>(controller != null, nameof(controller));
 
             var azureNode = nameToVm[node.Name];
 
@@ -1630,11 +1631,11 @@ namespace Neon.Kube
         /// <summary>
         /// Performs some basic node initialization.
         /// </summary>
-        /// <param name="setupState">The setup controller state.</param>
+        /// <param name="controller">The setup controller.</param>
         /// <param name="node">The target node.</param>
-        private void ConfigureNode(ObjectDictionary setupState, NodeSshProxy<NodeDefinition> node)
+        private void ConfigureNode(ISetupController controller, NodeSshProxy<NodeDefinition> node)
         {
-            Covenant.Requires<ArgumentNullException>(setupState != null, nameof(setupState));
+            Covenant.Requires<ArgumentNullException>(controller != null, nameof(controller));
 
             node.WaitForBoot();
 

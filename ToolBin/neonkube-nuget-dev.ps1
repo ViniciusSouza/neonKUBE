@@ -1,3 +1,4 @@
+#Requires -Version 7.0
 #------------------------------------------------------------------------------
 # FILE:         neonkube-nuget-dev.ps1
 # CONTRIBUTOR:  Jeff Lill
@@ -48,12 +49,10 @@ if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
     exit
 }
 
-# Sign into 1Password and retrieve any necessary credentials.
+# Retrieve any necessary credentials.
 
-OpSignin
-
-$versionerKey  = OpGetPassword "NEON_OP_NUGET_VERSIONER_KEY"
-$devFeedApiKey = OpGetPassword "NEON_OP_DEVFEED_KEY"
+$versionerKey  = GetSecretPassword "NUGET_VERSIONER_KEY"
+$devFeedApiKey = GetSecretPassword "NUGET_DEVFEED_KEY"
 
 #------------------------------------------------------------------------------
 # Sets the package version in the specified project file and makes a backup
@@ -97,7 +96,7 @@ function RestoreVersion
         [string]$project
     )
 
-    "* Restore: ${project}:${version}"
+    "* Restore: ${project}"
 
     $projectPath = [io.path]::combine($env:NF_ROOT, "Lib", "$project", "$project" + ".csproj")
 
@@ -175,6 +174,7 @@ SetVersion Neon.Cassandra           $libraryVersion
 SetVersion Neon.Common              $libraryVersion
 SetVersion Neon.Couchbase           $libraryVersion
 SetVersion Neon.Cryptography        $libraryVersion
+SetVersion Neon.Deployment          $libraryVersion
 SetVersion Neon.Docker              $libraryVersion
 SetVersion Neon.HyperV              $libraryVersion
 SetVersion Neon.Service             $libraryVersion
@@ -212,6 +212,7 @@ Publish Neon.Cassandra              $libraryVersion
 Publish Neon.Common                 $libraryVersion
 Publish Neon.Couchbase              $libraryVersion
 Publish Neon.Cryptography           $libraryVersion
+Publish Neon.Deployment             $libraryVersion
 Publish Neon.Docker                 $libraryVersion
 Publish Neon.HyperV                 $libraryVersion
 Publish Neon.Service                $libraryVersion
@@ -249,6 +250,7 @@ RestoreVersion Neon.Cassandra
 RestoreVersion Neon.Common
 RestoreVersion Neon.Couchbase
 RestoreVersion Neon.Cryptography
+RestoreVersion Neon.Deployment
 RestoreVersion Neon.Docker
 RestoreVersion Neon.HyperV
 RestoreVersion Neon.Service

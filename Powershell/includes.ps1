@@ -1,4 +1,5 @@
-﻿#------------------------------------------------------------------------------
+﻿#Requires -Version 7.0
+#------------------------------------------------------------------------------
 # FILE:         includes.ps1
 # CONTRIBUTOR:  Jeff Lill
 # COPYRIGHT:    Copyright (c) 2005-2021 by neonFORGE LLC.  All rights reserved.
@@ -27,6 +28,6 @@ cd $env:NF_ROOT/Powershell
 
 . ./error-handling.ps1
 . ./git.ps1
-. ./one-password.ps1
+. ./deployment.ps1
 
 cd $includeOrgDir

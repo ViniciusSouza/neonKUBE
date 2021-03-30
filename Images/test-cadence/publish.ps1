@@ -1,4 +1,5 @@
-﻿#------------------------------------------------------------------------------
+﻿#Requires -Version 7.0
+#------------------------------------------------------------------------------
 # FILE:         publish.ps1
 # CONTRIBUTOR:  Marcus Bowyer
 # COPYRIGHT:    Copyright (c) 2005-2021 by neonFORGE LLC.  All rights reserved.
@@ -19,7 +20,7 @@
 #
 # NOTE: You must be logged into Docker Hub.
 #
-# Usage: powershell -file ./publish.ps1 [-all]
+# USAGE: pwsh -file ./publish.ps1 [-all]
 
 param 
 (

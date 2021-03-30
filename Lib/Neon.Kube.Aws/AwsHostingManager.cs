@@ -736,7 +736,7 @@ namespace Neon.Kube
 
         private ClusterProxy                        cluster;
         private string                              clusterName;
-        private ObjectDictionary                    setupState;
+        private ISetupController                    controller;
         private string                              clusterEnvironment;
         private HostingOptions                      hostingOptions;
         private CloudOptions                        cloudOptions;
@@ -1076,15 +1076,16 @@ namespace Neon.Kube
         }
 
         /// <inheritdoc/>
-        public override async Task<bool> ProvisionAsync(ClusterLogin clusterLogin, ObjectDictionary setupState, string secureSshPassword, string orgSshPassword = null)
+        public override async Task<bool> ProvisionAsync(ISetupController controller, string secureSshPassword, string orgSshPassword = null)
         {
-            Covenant.Requires<ArgumentNullException>(clusterLogin != null, nameof(clusterLogin));
-            Covenant.Requires<ArgumentNullException>(setupState != null, nameof(setupState));
+            Covenant.Requires<ArgumentNullException>(controller != null, nameof(controller));
             Covenant.Requires<ArgumentNullException>(!string.IsNullOrEmpty(secureSshPassword), nameof(secureSshPassword));
             Covenant.Requires<ArgumentNullException>(!string.IsNullOrEmpty(orgSshPassword), nameof(orgSshPassword));
             Covenant.Assert(cluster != null, $"[{nameof(AwsHostingManager)}] was created with the wrong constructor.");
 
-            this.setupState = setupState;
+            var clusterLogin = controller.Get<ClusterLogin>(KubeSetup.ClusterLoginProperty);
+
+            this.controller = controller;
 
             // We need to ensure that the cluster has at least one ingress node.
 
@@ -1123,7 +1124,7 @@ namespace Neon.Kube
             setupController.AddGlobalStep("ssh keys", ImportKeyPairAsync);
             setupController.AddNodeStep("node instances", CreateNodeInstanceAsync);
             setupController.AddNodeStep("credentials",
-                (state, node) =>
+                (controller, node) =>
                 {
                     // Update the node SSH proxies to use the secure SSH password.
 
@@ -1132,7 +1133,7 @@ namespace Neon.Kube
                 quiet: true);
             setupController.AddGlobalStep("load balancer", ConfigureLoadBalancerAsync);
             setupController.AddNodeStep("load balancer targets", WaitForSshTargetAsync);
-            setupController.AddGlobalStep("internet routing", async state => await UpdateNetworkAsync(NetworkOperations.InternetRouting | NetworkOperations.EnableSsh));
+            setupController.AddGlobalStep("internet routing", async controller => await UpdateNetworkAsync(NetworkOperations.InternetRouting | NetworkOperations.EnableSsh));
 
             if (!setupController.Run(leaveNodesConnected: false))
             {
@@ -1157,7 +1158,7 @@ namespace Neon.Kube
             // the OpenEBS disk will be easy to identify as the only unpartitioned disk.
 
             setupController.AddNodeStep("openebs",
-                async (state, node) =>
+                async (controller, node) =>
                 {
                     node.Status = "openebs: checking";
 
@@ -1258,7 +1259,7 @@ namespace Neon.Kube
                             }
                         });
                 },
-                (state, node) => node.Metadata.OpenEBS);
+                (controller, node) => node.Metadata.OpenEBS);
         }
 
         /// <inheritdoc/>
@@ -1349,11 +1350,11 @@ namespace Neon.Kube
         /// even if an connection has already been established.
         /// </note>
         /// </summary>
-        /// <param name="setupState">The setup controller state.</param>
+        /// <param name="controller">The setup controller.</param>
         /// <returns>The tracking <see cref="Task"/>.</returns>
-        private async Task ConnectAwsAsync(ObjectDictionary setupState)
+        private async Task ConnectAwsAsync(ISetupController controller)
         {
-            Covenant.Requires<ArgumentNullException>(setupState != null, nameof(setupState));
+            Covenant.Requires<ArgumentNullException>(controller != null, nameof(controller));
 
             if (isConnected)
             {
@@ -1767,11 +1768,11 @@ namespace Neon.Kube
         /// This also updates the node labels to match the capabilities of their VMs.
         /// </para>
         /// </summary>
-        /// <param name="setupState">The setup controller state.</param>
+        /// <param name="controller">The setup controller.</param>
         /// <returns>The tracking <see cref="Task"/>.</returns>
-        private async Task VerifyRegionAndInstanceTypesAsync(ObjectDictionary setupState)
+        private async Task VerifyRegionAndInstanceTypesAsync(ISetupController controller)
         {
-            Covenant.Requires<ArgumentNullException>(setupState != null, nameof(setupState));
+            Covenant.Requires<ArgumentNullException>(controller != null, nameof(controller));
 
             var regionName = awsOptions.Region;
             var zoneName   = awsOptions.AvailabilityZone;
@@ -1858,11 +1859,11 @@ namespace Neon.Kube
         /// <summary>
         /// Locates tha AMI to use for provisioning the nodes in the target region.
         /// </summary>
-        /// <param name="setupState">The setup controller state.</param>
+        /// <param name="controller">The setup controller.</param>
         /// <returns>The tracking <see cref="Task"/>.</returns>
-        private async Task LocateAmiAsync(ObjectDictionary setupState)
+        private async Task LocateAmiAsync(ISetupController controller)
         {
-            Covenant.Requires<ArgumentNullException>(setupState != null, nameof(setupState));
+            Covenant.Requires<ArgumentNullException>(controller != null, nameof(controller));
 
             // $hack(jefflill):
             //
@@ -1957,11 +1958,11 @@ namespace Neon.Kube
         /// cluster being deployed.
         /// </para>
         /// </summary>
-        /// <param name="setupState">The setup controller state.</param>
+        /// <param name="controller">The setup controller.</param>
         /// <returns>The tracking <see cref="Task"/>.</returns>
-        private async Task CreateResourceGroupAsync(ObjectDictionary setupState)
+        private async Task CreateResourceGroupAsync(ISetupController controller)
         {
-            Covenant.Requires<ArgumentNullException>(setupState != null, nameof(setupState));
+            Covenant.Requires<ArgumentNullException>(controller != null, nameof(controller));
 
             Group group;
 
@@ -2025,11 +2026,11 @@ namespace Neon.Kube
         /// <summary>
         /// Creates the the master and worker placement groups used to provision the cluster node instances.
         /// </summary>
-        /// <param name="setupState">The setup controller state.</param>
+        /// <param name="controller">The setup controller.</param>
         /// <returns>The tracking <see cref="Task"/>.</returns>
-        private async Task ConfigurePlacementGroupAsync(ObjectDictionary setupState)
+        private async Task ConfigurePlacementGroupAsync(ISetupController controller)
         {
-            Covenant.Requires<ArgumentNullException>(setupState != null, nameof(setupState));
+            Covenant.Requires<ArgumentNullException>(controller != null, nameof(controller));
 
             if (masterPlacementGroup == null)
             {
@@ -2082,11 +2083,11 @@ namespace Neon.Kube
         /// <summary>
         /// Creates the ingress and egress elastic IP addresses for the cluster if they don't already exist.
         /// </summary>
-        /// <param name="setupState">The setup controller state.</param>
+        /// <param name="controller">The setup controller.</param>
         /// <returns>The tracking <see cref="Task"/>.</returns>
-        private async Task CreateAddressesAsync(ObjectDictionary setupState)
+        private async Task CreateAddressesAsync(ISetupController controller)
         {
-            Covenant.Requires<ArgumentNullException>(setupState != null, nameof(setupState));
+            Covenant.Requires<ArgumentNullException>(controller != null, nameof(controller));
 
             if (ingressAddress == null)
             {
@@ -2197,10 +2198,10 @@ namespace Neon.Kube
         /// that we're not actually going to write the instance tags here; we'll do that when we
         /// actually create any new instances.
         /// </summary>
-        /// <param name="setupState">The setup controller state.</param>
-        private void AssignExternalSshPorts(ObjectDictionary setupState)
+        /// <param name="controller">The setup controller.</param>
+        private void AssignExternalSshPorts(ISetupController controller)
         {
-            Covenant.Requires<ArgumentNullException>(setupState != null, nameof(setupState));
+            Covenant.Requires<ArgumentNullException>(controller != null, nameof(controller));
 
             // Create a table with the currently allocated external SSH ports.
 
@@ -2237,11 +2238,11 @@ namespace Neon.Kube
         /// Configures the cluster networking components including the VPC, subnet, internet gateway
         /// security group and network ACLs.
         /// </summary>
-        /// <param name="setupState">The setup controller state.</param>
+        /// <param name="controller">The setup controller.</param>
         /// <returns>The tracking <see cref="Task"/>.</returns>
-        private async Task ConfigureNetworkAsync(ObjectDictionary setupState)
+        private async Task ConfigureNetworkAsync(ISetupController controller)
         {
-            Covenant.Requires<ArgumentNullException>(setupState != null, nameof(setupState));
+            Covenant.Requires<ArgumentNullException>(controller != null, nameof(controller));
 
             // Create the VPC.
 
@@ -2520,11 +2521,11 @@ namespace Neon.Kube
         /// <summary>
         /// Configures the load balancer.
         /// </summary>
-        /// <param name="setupState">The setup controller state.</param>
+        /// <param name="controller">The setup controller.</param>
         /// <returns>The tracking <see cref="Task"/>.</returns>
-        private async Task ConfigureLoadBalancerAsync(ObjectDictionary setupState)
+        private async Task ConfigureLoadBalancerAsync(ISetupController controller)
         {
-            Covenant.Requires<ArgumentNullException>(setupState != null, nameof(setupState));
+            Covenant.Requires<ArgumentNullException>(controller != null, nameof(controller));
 
             // Create the load balancer in the subnet.
 
@@ -2555,11 +2556,11 @@ namespace Neon.Kube
         /// <summary>
         /// Imports the SSH key pair we'll use for the node security.
         /// </summary>
-        /// <param name="setupState">The setup controller state.</param>
+        /// <param name="controller">The setup controller.</param>
         /// <returns>The tracking <see cref="Task"/>.</returns>
-        private async Task ImportKeyPairAsync(ObjectDictionary setupState)
+        private async Task ImportKeyPairAsync(ISetupController controller)
         {
-            Covenant.Requires<ArgumentNullException>(setupState != null, nameof(setupState));
+            Covenant.Requires<ArgumentNullException>(controller != null, nameof(controller));
 
             if (keyPairId == null)
             {
@@ -2580,12 +2581,12 @@ namespace Neon.Kube
         /// <summary>
         /// Waits for the load balancer SSH target group for the node to become healthy.
         /// </summary>
-        /// <param name="setupState">The setup controller state.</param>
+        /// <param name="controller">The setup controller.</param>
         /// <param name="node">The target node.</param>
         /// <returns>The tracking <see cref="Task"/>.</returns>
-        private async Task WaitForSshTargetAsync(ObjectDictionary setupState, NodeSshProxy<NodeDefinition> node)
+        private async Task WaitForSshTargetAsync(ISetupController controller, NodeSshProxy<NodeDefinition> node)
         {
-            Covenant.Requires<ArgumentNullException>(setupState != null, nameof(setupState));
+            Covenant.Requires<ArgumentNullException>(controller != null, nameof(controller));
 
             node.Status = "waiting...";
 
@@ -2639,12 +2640,12 @@ namespace Neon.Kube
         /// <summary>
         /// Creates the AWS instance for a node.
         /// </summary>
-        /// <param name="setupState">The setup controller state.</param>
+        /// <param name="controller">The setup controller.</param>
         /// <param name="node">The target node.</param>
         /// <returns>The tracking <see cref="Task"/>.</returns>
-        private async Task CreateNodeInstanceAsync(ObjectDictionary setupState, NodeSshProxy<NodeDefinition> node)
+        private async Task CreateNodeInstanceAsync(ISetupController controller, NodeSshProxy<NodeDefinition> node)
         {
-            Covenant.Requires<ArgumentNullException>(setupState != null, nameof(setupState));
+            Covenant.Requires<ArgumentNullException>(controller != null, nameof(controller));
 
             //-----------------------------------------------------------------
             // Create the instance if it doesn't already exist.

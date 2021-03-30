@@ -1,4 +1,5 @@
-﻿#------------------------------------------------------------------------------
+﻿#Requires -Version 7.0
+#------------------------------------------------------------------------------
 # FILE:         publish.ps1
 # CONTRIBUTOR:  Jeff Lill
 # COPYRIGHT:    Copyright (c) 2005-2021 by neonFORGE LLC.  All rights reserved.
@@ -19,15 +20,15 @@
 #
 # NOTE: You must be logged into Docker Hub.
 #
-# Usage: powershell -file ./publish-all.ps1 [-all]
+# USAGE: pwsh -file ./publish-all.ps1 [-all]
 
 param 
 (
     [switch]$all         = $false,      # Rebuild all images
     [switch]$base        = $false,      # Rebuild base images
-    [switch]$dotnet      = $false,      # Rebuild .NET based images
+    [switch]$test        = $false,      # Rebuild test related images
     [switch]$other       = $false,      # Rebuild all other images (usually script based)
-    [switch]$services    = $false,      # Rebuild all service images
+    [switch]$services    = $false,      # Rebuild all cluster service images
     [switch]$nopush      = $false,      # Don't push to the registry
     [switch]$noprune     = $false,      # Don't prune the local Docker cache
     [switch]$allVersions = $false,      # Rebuild all image versions
@@ -41,9 +42,7 @@ $image_root = "$env:NF_ROOT\\Images"
 . $image_root/includes.ps1
 #----------------------------------------------------------
 
-# Sign into 1Password and retrieve any necessary credentials.
-
-OpSignin
+# Retrieve any necessary credentials.
 
 # $todo(jefflill): Need to load the GITHUB PAT
 
@@ -89,16 +88,16 @@ function Publish
 if ($all)
 {
     $base     = $true
-    $dotnet   = $true
+    $test     = $true
     $other    = $true
     $services = $true
 }
-elseif ((-not $base) -and (-not $dotnet) -and (-not $other))
+elseif ((-not $base) -and (-not $test) -and (-not $other) -and (-not $services))
 {
-    # Build .NET and other images, but not base images, 
-    # by default.
+    # Build everything but base images by default.
 
-    $dotnet   = $true
+    $base     = $false
+    $test     = $true
     $other    = $true
     $services = $true
 }
@@ -119,7 +118,7 @@ if (-not $noprune)
 
 if ($base)
 {
-    # Other base images:
+    # Base images:
 
     # Its lonely here!
 }
@@ -137,10 +136,15 @@ if ($other)
     Publish "$image_root\\yugabyte"
 }
 
-if ($services)
+if ($test)
 {
     Publish "$image_root\\test"
+    Publish "$image_root\\test-api"
     Publish "$image_root\\test-cadence"
     Publish "$image_root\\test-temporal"
+}
+
+if ($services)
+{
     Publish "$image_root\\neon-cluster-manager"
 }

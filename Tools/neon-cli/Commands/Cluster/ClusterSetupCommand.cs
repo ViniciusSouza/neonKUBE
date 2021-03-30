@@ -226,7 +226,7 @@ OPTIONS:
 
             // Perform the setup operations.
 
-            var setupController =
+            var controller =
                 new SetupController<NodeDefinition>(new string[] { "cluster", "setup", $"[{cluster.Name}]" }, cluster.Nodes)
                 {
                     ShowStatus  = !Program.Quiet,
@@ -236,22 +236,24 @@ OPTIONS:
 
             // Configure the setup controller state.
 
-            setupController.Add(KubeSetup.DebugModeProperty, debug);
-            setupController.Add(KubeSetup.ClusterProxyProperty, cluster);
-            setupController.Add(KubeSetup.ClusterLoginProperty, clusterLogin);
-            setupController.Add(KubeSetup.HostingManagerProperty, hostingManager);
-            setupController.Add(KubeSetup.HostingEnvironmentProperty, hostingManager.HostingEnvironment);
+            controller.Add(KubeSetup.DebugModeProperty, debug);
+            controller.Add(KubeSetup.ReleaseModeProperty, Program.IsRelease);
+            controller.Add(KubeSetup.MaintainerModeProperty, !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("NC_ROOT")));
+            controller.Add(KubeSetup.ClusterProxyProperty, cluster);
+            controller.Add(KubeSetup.ClusterLoginProperty, clusterLogin);
+            controller.Add(KubeSetup.HostingManagerProperty, hostingManager);
+            controller.Add(KubeSetup.HostingEnvironmentProperty, hostingManager.HostingEnvironment);
 
             // Configure the setup steps.
 
-            setupController.AddGlobalStep("download binaries", async state => await KubeSetup.InstallWorkstationBinariesAsync(state));
-            setupController.AddWaitUntilOnlineStep("connect");
-            setupController.AddNodeStep("verify OS", (state, node) => node.VerifyNodeOS());
+            controller.AddGlobalStep("download binaries", async controller => await KubeSetup.InstallWorkstationBinariesAsync(controller));
+            controller.AddWaitUntilOnlineStep("connect");
+            controller.AddNodeStep("verify OS", (controller, node) => node.VerifyNodeOS());
 
             // $todo(jefflill): We don't support Linux distribution upgrades yet.
-            setupController.AddNodeStep("node basics", (state, node) => node.BaseInitialize(state.Get<HostingEnvironment>(KubeSetup.HostingEnvironmentProperty), upgradeLinux: false));
-                
-            setupController.AddNodeStep("setup NTP", (state, node) => node.SetupConfigureNtp(state));
+            controller.AddNodeStep("node basics", (controller, node) => node.BaseInitialize(controller, upgradeLinux: false));
+
+            controller.AddNodeStep("setup NTP", (controller, node) => node.SetupConfigureNtp(controller));
 
             // Write the operation begin marker to all cluster node logs.
 
@@ -263,77 +265,82 @@ OPTIONS:
 
             var configureFirstMasterStepLabel = cluster.Definition.Masters.Count() > 1 ? "setup first master" : "setup master";
 
-            setupController.AddNodeStep(configureFirstMasterStepLabel,
-                (state, node) =>
+            controller.AddNodeStep(configureFirstMasterStepLabel,
+                (controller, node) =>
                 {
-                    node.SetupNode(setupController);
+                    node.SetupNode(controller);
                     node.InvokeIdempotent("setup/setup-node-restart", () => node.Reboot(wait: true));
                 },
-                (state, node) => node == cluster.FirstMaster);
+                (controller, node) => node == cluster.FirstMaster);
 
             // Perform common configuration for the remaining nodes (if any).
 
             if (cluster.Definition.Nodes.Count() > 1)
             {
-                setupController.AddNodeStep("setup other nodes",
-                    (state, node) =>
+                controller.AddNodeStep("setup other nodes",
+                    (controller, node) =>
                     {
-                        node.SetupNode(setupController);
+                        node.SetupNode(controller);
                         node.InvokeIdempotent("setup/setup-node-restart", () => node.Reboot(wait: true));
                     },
-                    (state, node) => node != cluster.FirstMaster);
+                    (controller, node) => node != cluster.FirstMaster);
             }
 
-            setupController.AddNodeStep("install helm",
-                (state, node) =>
+            if (commandLine.HasOption("--debug"))
+            {
+                controller.AddNodeStep("load images", (controller, node) => node.NodeLoadImagesAsync(controller, downloadParallel: 5, loadParallel: 3));
+            }
+
+            controller.AddNodeStep("install helm",
+                (controller, node) =>
                 {
-                    node.NodeInstallHelm(state);
+                    node.NodeInstallHelm(controller);
                 });
 
             if (commandLine.HasOption("--upload-charts") || debug)
             {
-                setupController.AddNodeStep("upload Helm charts",
-                    (state, node) =>
+                controller.AddNodeStep("upload Helm charts",
+                    (controller, node) =>
                     {
                         cluster.FirstMaster.SudoCommand($"rm -rf {KubeNodeFolders.Helm}/*");
-                        cluster.FirstMaster.NodeInstallHelmArchive(state, message => Console.WriteLine(message));
+                        cluster.FirstMaster.NodeInstallHelmArchive(controller);
 
                         var zipPath = LinuxPath.Combine(KubeNodeFolders.Helm, "charts.zip");
 
                         cluster.FirstMaster.SudoCommand($"unzip {zipPath} -d {KubeNodeFolders.Helm}");
                         cluster.FirstMaster.SudoCommand($"rm -f {zipPath}");
                     },
-                    (state, node) => node == cluster.FirstMaster);
+                    (controller, node) => node == cluster.FirstMaster);
             }
 
             //-----------------------------------------------------------------
             // Cluster setup.
 
-            setupController.AddGlobalStep("setup cluster", setupState => KubeSetup.SetupClusterAsync(setupState));
+            controller.AddGlobalStep("setup cluster", controller => KubeSetup.SetupClusterAsync(controller));
 
             //-----------------------------------------------------------------
             // Verify the cluster.
 
-            setupController.AddNodeStep("check masters",
-                (state, node) =>
+            controller.AddNodeStep("check masters",
+                (controller, node) =>
                 {
                     KubeDiagnostics.CheckMaster(node, cluster.Definition);
                 },
-                (state, node) => node.Metadata.IsMaster);
+                (controller, node) => node.Metadata.IsMaster);
 
             if (cluster.Workers.Count() > 0)
             {
-                setupController.AddNodeStep("check workers",
-                    (state, node) =>
+                controller.AddNodeStep("check workers",
+                    (controller, node) =>
                     {
                         KubeDiagnostics.CheckWorker(node, cluster.Definition);
                     },
-                    (state, node) => node.Metadata.IsWorker);
+                    (controller, node) => node.Metadata.IsWorker);
             }
 
             // Start setup.
 
-            if (!setupController.Run())
+            if (!controller.Run())
             {
                 // Write the operation end/failed marker to all cluster node logs.
 

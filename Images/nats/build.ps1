@@ -1,4 +1,5 @@
-﻿#------------------------------------------------------------------------------
+﻿#Requires -Version 7.0
+#------------------------------------------------------------------------------
 # FILE:         build.ps1
 # CONTRIBUTOR:  Jeff Lill
 # COPYRIGHT:    Copyright (c) 2005-2021 by neonFORGE LLC.  All rights reserved.
@@ -17,7 +18,7 @@
 
 # Builds the NATS image.
 #
-# Usage: powershell -file build.ps1 REGISTRY VERSION TAG
+# USAGE: pwsh -file build.ps1 REGISTRY VERSION TAG
 
 param 
 (
@@ -27,5 +28,9 @@ param
 )
 
 Log-ImageBuild $registry $tag
+
+# Pull the source image.
+
+Exec { docker pull nats:$version-linux }
 
 Exec { docker build -t "${registry}:$tag" --build-arg "VERSION=$version" . }

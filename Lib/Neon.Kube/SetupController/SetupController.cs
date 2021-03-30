@@ -41,7 +41,7 @@ namespace Neon.Kube
     /// state that can be accessed by the setup step actions.  This dictionary is keyed by
     /// case-sensitive strings and can store and retrieve objects with differing types.
     /// </remarks>
-    public class SetupController<NodeMetadata> : ObjectDictionary
+    public class SetupController<NodeMetadata> : ObjectDictionary, ISetupController
         where NodeMetadata : class
     {
         //---------------------------------------------------------------------
@@ -60,11 +60,11 @@ namespace Neon.Kube
             public int                                                          Number;
             public string                                                       Label;
             public bool                                                         Quiet;
-            public Action<ObjectDictionary>                                     SyncGlobalAction;
-            public Func<ObjectDictionary, Task>                                 AsyncGlobalAction;
-            public Action<ObjectDictionary, NodeSshProxy<NodeMetadata>>         SyncNodeAction;
-            public Func<ObjectDictionary, NodeSshProxy<NodeMetadata>, Task>     AsyncNodeAction;
-            public Func<ObjectDictionary, NodeSshProxy<NodeMetadata>, bool>     Predicate;
+            public Action<ISetupController>                                     SyncGlobalAction;
+            public Func<ISetupController, Task>                                 AsyncGlobalAction;
+            public Action<ISetupController, NodeSshProxy<NodeMetadata>>         SyncNodeAction;
+            public Func<ISetupController, NodeSshProxy<NodeMetadata>, Task>     AsyncNodeAction;
+            public Func<ISetupController, NodeSshProxy<NodeMetadata>, bool>     Predicate;
             public StepStatus                                                   Status;
             public int                                                          ParallelLimit;
             public bool                                                         WasExecuted;
@@ -120,7 +120,7 @@ namespace Neon.Kube
             this.nodes           = nodes.OrderBy(n => n.Name, StringComparer.OrdinalIgnoreCase).ToList();
             this.steps           = new List<Step>();
             this.sbDisplay       = new StringBuilder();
-            this.previousDisplay     = string.Empty;
+            this.previousDisplay = string.Empty;
         }
 
         /// <summary>
@@ -134,6 +134,11 @@ namespace Neon.Kube
         /// defaults to <c>true</c>.
         ///</summary>
         public bool ShowNodeStatus { get; set; } = true;
+
+        /// <summary>
+        /// Raises when progress/error messages are received from setup steps.
+        /// </summary>
+        public event SetupProgressDelegate ProgressEvent;
 
         /// <summary>
         /// Specifies the maximum number of setup steps to be displayed.
@@ -187,7 +192,7 @@ namespace Neon.Kube
         /// The optional zero-based index of the position where the step is
         /// to be inserted into the step list.
         /// </param>
-        public void AddGlobalStep(string stepLabel, Action<ObjectDictionary> action, bool quiet = false, int position = -1)
+        public void AddGlobalStep(string stepLabel, Action<ISetupController> action, bool quiet = false, int position = -1)
         {
             if (position < 0)
             {
@@ -215,7 +220,7 @@ namespace Neon.Kube
         /// The optional zero-based index of the position where the step is
         /// to be inserted into the step list.
         /// </param>
-        public void AddGlobalStep(string stepLabel, Func<ObjectDictionary, Task> action, bool quiet = false, int position = -1)
+        public void AddGlobalStep(string stepLabel, Func<ISetupController, Task> action, bool quiet = false, int position = -1)
         {
             if (position < 0)
             {
@@ -251,7 +256,7 @@ namespace Neon.Kube
         public void AddWaitUntilOnlineStep(
             string                                                      stepLabel     = "connect", 
             string                                                      status        = null, 
-            Func<ObjectDictionary, NodeSshProxy<NodeMetadata>, bool>    nodePredicate = null, 
+            Func<ISetupController, NodeSshProxy<NodeMetadata>, bool>    nodePredicate = null, 
             bool                                                        quiet         = false, 
             TimeSpan?                                                   timeout       = null, 
             int                                                         position      = -1)
@@ -297,7 +302,7 @@ namespace Neon.Kube
             string                                                      stepLabel, 
             TimeSpan                                                    delay, 
             string                                                      status        = null,
-            Func<ObjectDictionary, NodeSshProxy<NodeMetadata>, bool>    nodePredicate = null, 
+            Func<ISetupController, NodeSshProxy<NodeMetadata>, bool>    nodePredicate = null, 
             bool                                                        quiet         = false, 
             int                                                         position      = -1)
         {
@@ -343,15 +348,15 @@ namespace Neon.Kube
         /// </param>
         public void AddNodeStep(
             string stepLabel,
-            Action<ObjectDictionary, NodeSshProxy<NodeMetadata>>        nodeAction,
-            Func<ObjectDictionary, NodeSshProxy<NodeMetadata>, bool>    nodePredicate   = null,
+            Action<ISetupController, NodeSshProxy<NodeMetadata>>        nodeAction,
+            Func<ISetupController, NodeSshProxy<NodeMetadata>, bool>    nodePredicate   = null,
             bool                                                        quiet           = false,
             bool                                                        noParallelLimit = false,
             int                                                         position        = -1,
             int                                                         parallelLimit   = 0)
         {
-            nodeAction    = nodeAction ?? new Action<ObjectDictionary, NodeSshProxy<NodeMetadata>>((state, node) => { });
-            nodePredicate = nodePredicate ?? new Func<ObjectDictionary, NodeSshProxy<NodeMetadata>, bool>((state, node) => true);
+            nodeAction    = nodeAction ?? new Action<ISetupController, NodeSshProxy<NodeMetadata>>((state, node) => { });
+            nodePredicate = nodePredicate ?? new Func<ISetupController, NodeSshProxy<NodeMetadata>, bool>((state, node) => true);
 
             if (position < 0)
             {
@@ -404,15 +409,15 @@ namespace Neon.Kube
         /// </param>
         public void AddNodeStep(
             string stepLabel,
-            Func<ObjectDictionary, NodeSshProxy<NodeMetadata>, Task>    nodeAction,
-            Func<ObjectDictionary, NodeSshProxy<NodeMetadata>, bool>    nodePredicate   = null,
+            Func<ISetupController, NodeSshProxy<NodeMetadata>, Task>    nodeAction,
+            Func<ISetupController, NodeSshProxy<NodeMetadata>, bool>    nodePredicate   = null,
             bool                                                        quiet           = false,
             bool                                                        noParallelLimit = false,
             int                                                         position        = -1,
             int                                                         parallelLimit   = 0)
         {
-            nodeAction    = nodeAction ?? new Func<ObjectDictionary, NodeSshProxy<NodeMetadata>, Task>((state, node) => { return Task.CompletedTask; });
-            nodePredicate = nodePredicate ?? new Func<ObjectDictionary, NodeSshProxy<NodeMetadata>, bool>((state, node) => true);
+            nodeAction    = nodeAction ?? new Func<ISetupController, NodeSshProxy<NodeMetadata>, Task>((state, node) => { return Task.CompletedTask; });
+            nodePredicate = nodePredicate ?? new Func<ISetupController, NodeSshProxy<NodeMetadata>, bool>((state, node) => true);
 
             if (position < 0)
             {
@@ -796,7 +801,7 @@ namespace Neon.Kube
                     Thread.Sleep(TimeSpan.FromMilliseconds(100));
                 }
 
-                error = stepNodes.FirstOrDefault(n => n.IsFaulted) != null;
+                error = error || stepNodes.FirstOrDefault(n => n.IsFaulted) != null;
 
                 if (error)
                 {
@@ -1076,6 +1081,143 @@ namespace Neon.Kube
             if (error)
             {
                 throw new KubeException($"[{nodes.Count(n => n.IsFaulted)}] nodes are faulted.");
+            }
+        }
+
+        //---------------------------------------------------------------------
+        // ISetupController implementation
+
+        // These methods are intended to unify how progress and error messages are
+        // reported by prepare/setup code as well as to refactor how higher-level
+        // code can receive and process these.
+        //
+        // The setup code has evolved over 4+ years, starting with the setup controller
+        // being configured by the [neon-cli] console application assuming that status
+        // can be written directly to the console and that errors can be handled by
+        // just terminating [neon-cli].
+        // 
+        // This is part of the final setup refactor where all cluster prepare/setup 
+        // related code is relocated to the [Neon.Kube] library so it can be referenced
+        // by different kinds of applications.  This will include [neon-cli] as well
+        // as neonDESKTOP right now and perhaps Temporal based workflows in the future
+        // as part of a neonCLOUD offering.
+        //
+        // The LogProgress() methods update global or node-specific status.  For nodes,
+        // this will be set as the node status text.  The Error() methods do the same
+        // thing for error messages while also ensuring that setup terminates after the
+        // current step completes.
+
+        /// <inheritdoc/>
+        public void LogProgress(string message)
+        {
+            if (string.IsNullOrEmpty(message))
+            {
+                return;
+            }
+
+            if (ProgressEvent != null)
+            {
+                ProgressEvent.Invoke(
+                    new SetupProgressMessage()
+                    {
+                        Message = message
+                    });
+            }
+        }
+
+        /// <inheritdoc/>
+        public void LogProgress(string verb, string message)
+        {
+            Covenant.Requires<ArgumentNullException>(!string.IsNullOrEmpty(verb), nameof(verb));
+            Covenant.Requires<ArgumentNullException>(!string.IsNullOrEmpty(message), nameof(message));
+
+            if (ProgressEvent != null)
+            {
+                ProgressEvent.Invoke(
+                    new SetupProgressMessage()
+                    {
+                        Verb    = verb,
+                        Message = message
+                    });
+            }
+        }
+
+        /// <inheritdoc/>
+        public void LogProgress(LinuxSshProxy node, string message)
+        {
+            Covenant.Requires<ArgumentNullException>(node != null, nameof(node));
+            Covenant.Requires<ArgumentNullException>(!string.IsNullOrEmpty(message), nameof(message));
+
+            ((NodeSshProxy<NodeMetadata>)node).Status = message;
+
+            if (ProgressEvent != null)
+            {
+                ProgressEvent.Invoke(
+                    new SetupProgressMessage()
+                    {
+                        Node    = node,
+                        Message = message
+                    });
+            }
+        }
+
+        /// <inheritdoc/>
+        public void LogProgress(LinuxSshProxy node, string verb, string message)
+        {
+            Covenant.Requires<ArgumentNullException>(node != null, nameof(node));
+            Covenant.Requires<ArgumentNullException>(!string.IsNullOrEmpty(verb), nameof(verb));
+            Covenant.Requires<ArgumentNullException>(!string.IsNullOrEmpty(message), nameof(message));
+
+            ((NodeSshProxy<NodeMetadata>)node).Status = $"{verb}: {message}";
+
+            if (ProgressEvent != null)
+            {
+                ProgressEvent.Invoke(
+                    new SetupProgressMessage()
+                    {
+                        Node    = node,
+                        Verb    = verb,
+                        Message = message
+                    });
+            }
+        }
+
+        /// <inheritdoc/>
+        public void LogError(string message)
+        {
+            Covenant.Requires<ArgumentNullException>(!string.IsNullOrEmpty(message), nameof(message));
+
+            this.error = true;
+
+            if (ProgressEvent != null)
+            {
+                ProgressEvent.Invoke(
+                    new SetupProgressMessage()
+                    {
+                        Message = message,
+                        IsError = true
+                    });
+            }
+        }
+
+        /// <inheritdoc/>
+        public void LogError(LinuxSshProxy node, string message)
+        {
+            Covenant.Requires<ArgumentNullException>(node != null, nameof(node));
+            Covenant.Requires<ArgumentNullException>(!string.IsNullOrEmpty(message), nameof(message));
+
+            ((NodeSshProxy<NodeMetadata>)node).Status    = message;
+            ((NodeSshProxy<NodeMetadata>)node).IsFaulted = true;
+
+            if (ProgressEvent != null)
+            {
+                ProgressEvent.Invoke(
+                    new SetupProgressMessage()
+                    {
+                        Node    = node,
+                        Message = message,
+                        IsError = true
+                    });
             }
         }
     }
