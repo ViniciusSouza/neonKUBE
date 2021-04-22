@@ -1,6 +1,6 @@
 ﻿//-----------------------------------------------------------------------------
-// FILE:	    RegistrationException.cs
-// CONTRIBUTOR: Jeff Lill
+// FILE:	    UnknownExternalWorkflowExecutionException.cs
+// CONTRIBUTOR: Jack Burns
 // COPYRIGHT:	Copyright (c) 2005-2021 by neonFORGE LLC.  All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,23 +16,31 @@
 // limitations under the License.
 
 using System;
+using System.Collections.Generic;
+using System.Text;
 
-using Neon.Temporal.Internal;
-
-namespace Neon.Temporal
+namespace Neon.Temporal.Internal
 {
     /// <summary>
-    /// Thrown for workflow and activity registration problems.
+    /// Exception that can be returned when external workflow doesn't exist.
     /// </summary>
-    public class RegistrationException : Exception
+    public class UnknownExternalWorkflowExecutionException : TemporalException
     {
         /// <summary>
         /// Constructor.
         /// </summary>
-        /// <param name="message">Specifies the exception message.</param>
-        public RegistrationException(string message)
-            : base(message)
+        /// <param name="message">Optionally specifies a message.</param>
+        /// <param name="innerException">Optionally specifies the inner exception.</param>
+        public UnknownExternalWorkflowExecutionException(
+            string    message        = null,
+            Exception innerException = null)
+            : base(message, innerException)
         {
         }
+
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
+        internal override TemporalErrorType TemporalErrorType => TemporalErrorType.UnknownExternalWorkflowExecution;
     }
 }

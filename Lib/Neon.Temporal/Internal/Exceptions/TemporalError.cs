@@ -103,8 +103,6 @@ namespace Neon.Temporal.Internal
         {
             switch (typeString)
             {
-                case "generic":                          return TemporalErrorType.Generic;
-                case "custom":                           return TemporalErrorType.Custom;
                 case "canceled":                         return TemporalErrorType.Canceled;
                 case "activity":                         return TemporalErrorType.Activity;
                 case "application":                      return TemporalErrorType.Application;
@@ -124,9 +122,7 @@ namespace Neon.Temporal.Internal
                 // error handling.
 
                 default:
-
-                    return TemporalErrorType.Custom;
-                    //throw new NotImplementedException();
+                    throw new NotImplementedException();
             }
         }
 
@@ -139,8 +135,6 @@ namespace Neon.Temporal.Internal
         {
             switch (type)
             {
-                case TemporalErrorType.Generic:                          return "generic";
-                case TemporalErrorType.Custom:                           return "custom";
                 case TemporalErrorType.Canceled:                         return "canceled";
                 case TemporalErrorType.Activity:                         return "activity";
                 case TemporalErrorType.Application:                      return "application";
@@ -173,12 +167,11 @@ namespace Neon.Temporal.Internal
         /// </summary>
         /// <param name="error">The GOLANG error string.</param>
         /// <param name="type">Optionally specifies the error type. This defaults to <see cref="TemporalErrorType.Generic"/>.</param>
-        public TemporalError(string error, TemporalErrorType type = TemporalErrorType.Generic)
+        public TemporalError(string error)
         {
             Covenant.Requires<ArgumentNullException>(!string.IsNullOrEmpty(error), nameof(error));
 
             this.ErrorJson = error;
-            this.SetErrorType(type);
         }
 
         /// <summary>
@@ -288,14 +281,6 @@ namespace Neon.Temporal.Internal
 
             switch (errorType)
             {
-                case TemporalErrorType.Generic:
-
-                    throw new NotImplementedException();
-
-                case TemporalErrorType.Custom:
-
-                    throw new NotImplementedException();
-
                 case TemporalErrorType.Canceled:
 
                     throw new NotImplementedException();

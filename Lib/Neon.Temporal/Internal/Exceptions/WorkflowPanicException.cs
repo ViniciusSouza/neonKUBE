@@ -1,5 +1,5 @@
 ﻿//-----------------------------------------------------------------------------
-// FILE:	    CanceledFailure.cs
+// FILE:	    WorkflowPanicException.cs
 // CONTRIBUTOR: Jack Burns
 // COPYRIGHT:	Copyright (c) 2005-2021 by neonFORGE LLC.  All rights reserved.
 //
@@ -19,37 +19,47 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-using Neon.Temporal.Internal;
-
-namespace Neon.Temporal
+namespace Neon.Temporal.Internal
 {
     /// <summary>
-    /// Represents failures returned when a workflow
-    /// or activity is canceled.
+    /// Exception that contains information about panicked workflow.
+	/// Used to distinguish go panic in the workflow code from a PanicError returned from a workflow function.
     /// </summary>
-    public class CanceledFailure : TemporalFailure
+    public class WorkflowPanicException : TemporalFailure
     {
         /// <summary>
-        /// 
+        /// Constructor.
         /// </summary>
-        /// <param name="details">Encodes strong typed detail data of the failure.</param>
+        /// <param name="value">The string value of the panic as json.</param>
+        /// <param name="stackTrace">The stack trace of the panic.</param>
+        /// <param name="failure">The original failure.</param>
         /// <param name="message">Optionally specifies a message.</param>
         /// <param name="innerException">Optionally specifies the inner exception.</param>
-        public CanceledFailure(
-            byte[]    details,
+        public WorkflowPanicException(
+            string    value,
+            string    stackTrace,
+            Failure   failure,
             string    message        = null,
             Exception innerException = null)
-            : base(
-                    TemporalErrorType.Canceled,
-                    message,
-                    innerException)
+            : base(failure, message, innerException)
         {
-            Details = details;
+            StackTrace = stackTrace;
+            Value      = value;
         }
 
         /// <summary>
-        /// Extracts strong typed detail data of the failure.
+        /// The string value of the panic as json.
         /// </summary>
-        public byte[] Details { get; }
+        public string Value { get; set; }
+
+        /// <summary>
+        /// The stack trace of the panic.
+        /// </summary>
+        public new string StackTrace { get; set; }
+
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
+        internal override TemporalErrorType TemporalErrorType => TemporalErrorType.Panic;
     }
 }

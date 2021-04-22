@@ -1,6 +1,6 @@
 ﻿//-----------------------------------------------------------------------------
-// FILE:	    ServiceBusyException.cs
-// CONTRIBUTOR: Jeff Lill
+// FILE:	    TerminatedException.cs
+// CONTRIBUTOR: Jack Burns
 // COPYRIGHT:	Copyright (c) 2005-2021 by neonFORGE LLC.  All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,30 +16,33 @@
 // limitations under the License.
 
 using System;
+using System.Collections.Generic;
+using System.Text;
 
-using Neon.Temporal.Internal;
-
-namespace Neon.Temporal
+namespace Neon.Temporal.Internal
 {
     /// <summary>
-    /// Thrown when the Temporal cluster is too busy to perform an operation.
+    /// Returned when workflow was terminated.
     /// </summary>
-    public class ServiceBusyException : TemporalException
+    public class TerminatedException : TemporalFailure
     {
         /// <summary>
         /// Constructor.
         /// </summary>
+        /// <param name="failure">The original failure.</param>
         /// <param name="message">Optionally specifies a message.</param>
-        /// <param name="innerException">Optionally specifies an inner exception.</param>
-        public ServiceBusyException(string message = null, Exception innerException = null)
-            : base(message, innerException)
+        /// <param name="innerException">Optionally specifies the inner exception.</param>
+        public TerminatedException(
+            Failure   failure,
+            string    message        = null,
+            Exception innerException = null)
+            : base(failure, message, innerException)
         {
         }
 
+        /// <summary>
         /// <inheritdoc/>
-        internal override string TemporalError => "ServiceBusyError";
-
-        /// <inheritdoc/>
-        internal override TemporalErrorType TemporalErrorType => TemporalErrorType.Custom;
+        /// </summary>
+        internal override TemporalErrorType TemporalErrorType => TemporalErrorType.Terminated;
     }
 }

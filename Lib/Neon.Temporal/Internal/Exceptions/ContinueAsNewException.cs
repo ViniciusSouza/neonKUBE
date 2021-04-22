@@ -1,6 +1,6 @@
 ﻿//-----------------------------------------------------------------------------
-// FILE:	    ConnectException.cs
-// CONTRIBUTOR: Jeff Lill
+// FILE:	    ContinueAsNewException.cs
+// CONTRIBUTOR: Jack Burns
 // COPYRIGHT:	Copyright (c) 2005-2021 by neonFORGE LLC.  All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,27 +16,19 @@
 // limitations under the License.
 
 using System;
+using System.Collections.Generic;
+using System.Text;
 
-using Neon.Temporal.Internal;
-
-namespace Neon.Temporal
+namespace Neon.Temporal.Internal
 {
     /// <summary>
-    /// Thrown when a Temporal connection could not be established.
+    /// Contains information about how to continue the workflow as new.
     /// </summary>
-    public class ConnectException : TemporalException
+    public class ContinueAsNewException : TemporalException
     {
         /// <summary>
-        /// Constructor.
-        /// </summary>
-        /// <param name="message">Optionally specifies a message.</param>
-        /// <param name="innerException">Optionally specifies the inner exception.</param>
-        public ConnectException(string message = null, Exception innerException = null)
-            : base(message, innerException)
-        {
-        }
-
         /// <inheritdoc/>
-        internal override TemporalErrorType TemporalErrorType => TemporalErrorType.Custom;
+        /// </summary>
+        internal override TemporalErrorType TemporalErrorType => throw new NotImplementedException();
     }
 }

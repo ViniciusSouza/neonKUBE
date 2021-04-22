@@ -1,6 +1,6 @@
 ﻿//-----------------------------------------------------------------------------
-// FILE:	    WorkflowServiceException.cs
-// CONTRIBUTOR: John Burns
+// FILE:	    ServerException.cs
+// CONTRIBUTOR: Jack Burns
 // COPYRIGHT:	Copyright (c) 2005-2021 by neonFORGE LLC.  All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,33 +19,41 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-using Neon.Temporal.Internal;
-
-namespace Neon.Temporal
+namespace Neon.Temporal.Internal
 {
     /// <summary>
-    /// Thrown when there was a failure in the Temporal workflow service.
+    /// Failures that can be returned from server.
     /// </summary>
-    public class WorkflowServiceException : WorkflowException
+    public class ServerException : TemporalFailure
     {
         /// <summary>
         /// Constructor.
         /// </summary>
-        /// <param name="execution">The execution that raised the exception.</param>
-        /// <param name="workflowType">The type of the workflow that raised the exception.</param>
+        /// <param name="nonRetryable">Indicated if failure is not retryable.</param>
+        /// <param name="cause">The cause of the exception.</param>
+        /// <param name="failure">The original failure.</param>
         /// <param name="message">Optionally specifies a message.</param>
         /// <param name="innerException">Optionally specifies the inner exception.</param>
-        public WorkflowServiceException(
-            WorkflowExecution execution,
-            WorkflowType      workflowType,
-            string            message        = null,
-            Exception         innerException = null)
-            : base(
-                  execution,
-                  workflowType,
-                  message,
-                  innerException)
+        public ServerException(
+            bool      nonRetryable,
+            string    cause,
+            Failure   failure,
+            string    message        = null, 
+            Exception innerException = null)
+            :base(failure, message, innerException)
         {
+            Cause        = cause;
+            NonRetryable = nonRetryable;
         }
+
+        /// <summary>
+        /// Indicated if failure is not retryable.
+        /// </summary>
+        public bool NonRetryable { get; set; }
+
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
+        internal override TemporalErrorType TemporalErrorType => TemporalErrorType.Server;
     }
 }

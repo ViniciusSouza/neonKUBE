@@ -1,5 +1,5 @@
 ﻿//-----------------------------------------------------------------------------
-// FILE:	    TerminatedFailure.cs
+// FILE:	    CanceledFailure.cs
 // CONTRIBUTOR: Jack Burns
 // COPYRIGHT:	Copyright (c) 2005-2021 by neonFORGE LLC.  All rights reserved.
 //
@@ -19,28 +19,42 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-using Neon.Temporal.Internal;
-
-namespace Neon.Temporal
+namespace Neon.Temporal.Internal
 {
     /// <summary>
-    /// Returned when workflow was terminated.
+    /// Represents failures returned when a workflow
+    /// or activity is canceled.
     /// </summary>
-    public class TerminatedFailure : TemporalFailure
+    public class CanceledException : TemporalFailure
     {
         /// <summary>
-        /// Constructor.
+        /// 
         /// </summary>
+        /// <param name="details">Encodes strong typed detail data of the failure.</param>
+        /// <param name="cause">The cause of the exception.</param>
+        /// <param name="failure">The original failure.</param>
         /// <param name="message">Optionally specifies a message.</param>
         /// <param name="innerException">Optionally specifies the inner exception.</param>
-        public TerminatedFailure(
+        public CanceledException(
+            byte[]    details,
+            string    cause,
+            Failure   failure,
             string    message        = null,
             Exception innerException = null)
-            : base(
-                 TemporalErrorType.Terminated,
-                 message,
-                 innerException)
+            : base(failure, message, innerException)
         {
+            Cause   = cause;
+            Details = details;
         }
+
+        /// <summary>
+        /// Extracts strong typed detail data of the failure.
+        /// </summary>
+        public byte[] Details { get; }
+
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
+        internal override TemporalErrorType TemporalErrorType => TemporalErrorType.Canceled;
     }
 }

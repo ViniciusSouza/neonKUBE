@@ -296,13 +296,13 @@ namespace TestTemporal
                 {
                     await stub.GetResultAsync();
                 }
-                catch (TemporalGenericException e)
+                catch (TemporalException e)
                 {
-                    Assert.Equal("error message", e.Reason);
+                    Assert.Equal("error message", e.Cause);
                 }
                 catch (Exception e)
                 {
-                    Assert.True(false, $"Expected [{typeof(TemporalGenericException).FullName}] not [{e.GetType().FullName}].");
+                    Assert.True(false, $"Expected [{typeof(TemporalException).FullName}] not [{e.GetType().FullName}].");
                 }
 
                 //-----------------------------------------

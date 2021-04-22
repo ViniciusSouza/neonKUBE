@@ -2105,7 +2105,7 @@ namespace Neon.Temporal
                                 {
                                     log.LogError("Heartbeat check failed.  Closing Temporal connection.", e);
 
-                                    exception = new TimeoutException("[temporal-proxy] heartbeat failure.", e);
+                                    exception = new System.TimeoutException("[temporal-proxy] heartbeat failure.", e);
 
                                     // Break out of the while loop so we'll signal the application that
                                     // the connection has closed and then exit the thread below.

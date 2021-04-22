@@ -1,5 +1,5 @@
 ﻿//-----------------------------------------------------------------------------
-// FILE:	    ServerFailure.cs
+// FILE:	    PanicException.cs
 // CONTRIBUTOR: Jack Burns
 // COPYRIGHT:	Copyright (c) 2005-2021 by neonFORGE LLC.  All rights reserved.
 //
@@ -19,36 +19,46 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-using Neon.Temporal.Internal;
-
-namespace Neon.Temporal
+namespace Neon.Temporal.Internal
 {
     /// <summary>
-    /// Failures that can be returned from server.
+    /// Exception that contains information about panicked workflow/activity.
     /// </summary>
-    public class ServerFailure : TemporalFailure
+    public class PanicException : TemporalFailure
     {
         /// <summary>
         /// Constructor.
         /// </summary>
-        /// <param name="isNonRetryable">Indicated if failure is not retryable.</param>
+        /// <param name="value">The string value of the panic as json.</param>
+        /// <param name="stackTrace">The stack trace of the panic.</param>
+        /// <param name="failure">The original failure.</param>
         /// <param name="message">Optionally specifies a message.</param>
         /// <param name="innerException">Optionally specifies the inner exception.</param>
-        public ServerFailure(
-            bool      isNonRetryable,
-            string    message        = null, 
+        public PanicException(
+            string    value,
+            string    stackTrace,
+            Failure   failure,
+            string    message        = null,
             Exception innerException = null)
-            :base(
-                 TemporalErrorType.Server,
-                 message,
-                 innerException)
+            : base(failure, message, innerException)
         {
-            IsNonRetryable = isNonRetryable;
+            StackTrace = stackTrace;
+            Value      = value;
         }
 
         /// <summary>
-        /// Indicated if failure is not retryable.
+        /// The string value of the panic as json.
         /// </summary>
-        public bool IsNonRetryable { get; }
+        public string Value { get; set; }
+
+        /// <summary>
+        /// The stack trace of the panic.
+        /// </summary>
+        public new string StackTrace { get; set; }
+
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
+        internal override TemporalErrorType TemporalErrorType => TemporalErrorType.Panic;
     }
 }

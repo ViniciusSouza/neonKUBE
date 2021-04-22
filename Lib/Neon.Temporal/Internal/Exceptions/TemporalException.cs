@@ -16,11 +16,8 @@
 // limitations under the License.
 
 using System;
-using System.Diagnostics.Contracts;
 
-using Neon.Temporal.Internal;
-
-namespace Neon.Temporal
+namespace Neon.Temporal.Internal
 {
     /// <summary>
     /// Base class for all Temporal related exceptions.
@@ -66,7 +63,7 @@ namespace Neon.Temporal
         /// <returns>The <see cref="TemporalError"/>.</returns>
         internal virtual TemporalError ToTemporalError()
         {
-            return new TemporalError($"{Cause}{{{Message}}}", TemporalErrorType);
+            return new TemporalError($"{Cause}{{{Message}}}");
         }
     }
 }

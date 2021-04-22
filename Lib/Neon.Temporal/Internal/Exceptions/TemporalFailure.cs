@@ -1,6 +1,6 @@
 ﻿//-----------------------------------------------------------------------------
-// FILE:	    TemporalCustomException.cs
-// CONTRIBUTOR: Jeff Lill
+// FILE:	    TemporalFailure.cs
+// CONTRIBUTOR: Jack Burns
 // COPYRIGHT:	Copyright (c) 2005-2021 by neonFORGE LLC.  All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,27 +16,35 @@
 // limitations under the License.
 
 using System;
+using System.Collections.Generic;
+using System.Text;
 
-using Neon.Temporal.Internal;
-
-namespace Neon.Temporal
+namespace Neon.Temporal.Internal
 {
     /// <summary>
-    /// Thrown when a Temporal <b>custom</b> error is encountered.
+    /// Adds the idea of an original failure property to include the 
+    /// underlying cause of an excpetion.
     /// </summary>
-    public class TemporalCustomException : TemporalException
+    public abstract class TemporalFailure : TemporalException
     {
         /// <summary>
         /// Constructor.
         /// </summary>
+        /// <param name="failure">The original failure.</param>
         /// <param name="message">Optionally specifies a message.</param>
-        /// <param name="innerException">Optionally specifies an inner exception.</param>
-        public TemporalCustomException(string message = null, Exception innerException = null)
+        /// <param name="innerException">Optionally specifies the inner exception.</param>
+        public TemporalFailure(
+            Failure   failure,
+            string    message        = null, 
+            Exception innerException = null)
             : base(message, innerException)
         {
+            OriginalFailure = failure;
         }
 
-        /// <inheritdoc/>
-        internal override TemporalErrorType TemporalErrorType => TemporalErrorType.Custom;
+        /// <summary>
+        /// Returns the original failure.
+        /// </summary>
+        public Failure OriginalFailure { get; set; }
     }
 }

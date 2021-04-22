@@ -31,18 +31,6 @@ namespace Neon.Temporal.Internal
     public enum TemporalErrorType
     {
         /// <summary>
-        /// A generic error.
-        /// </summary>
-        [EnumMember(Value = "generic")]
-        Generic,
-
-        /// <summary>
-        /// Used for non temporal related erros (i.e. Bad Request)
-        /// </summary>
-        [EnumMember(Value = "custom")]
-        Custom,
-
-        /// <summary>
         /// Error returned from activity implementations with message and optional details.
         /// </summary>
         [EnumMember(Value = "application")]

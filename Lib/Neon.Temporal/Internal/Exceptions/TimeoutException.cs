@@ -1,5 +1,5 @@
 ﻿//-----------------------------------------------------------------------------
-// FILE:	    TimeoutFailure.cs
+// FILE:	    TimeoutException.cs
 // CONTRIBUTOR: Jack Burns
 // COPYRIGHT:	Copyright (c) 2005-2021 by neonFORGE LLC.  All rights reserved.
 //
@@ -19,32 +19,32 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-using Neon.Temporal.Internal;
-
-namespace Neon.Temporal
+namespace Neon.Temporal.Internal
 {
     /// <summary>
-    /// 
+    /// Exception returned when activity or child workflow timed out.
     /// </summary>
-    public class TimeoutFailure : TemporalFailure
+    public class TimeoutException : TemporalFailure
     {
         /// <summary>
-        /// 
+        /// Constructor.
         /// </summary>
         /// <param name="timeoutType">Specifies the type of timeout.</param>
         /// <param name="lastHeartbeatDetails">Encodes details of the last heartbeat before timeout.</param>
+        /// <param name="cause">The cause of the error.</param>
+        /// <param name="failure">The original failure.</param>
         /// <param name="message">Optionally specifies a message.</param>
         /// <param name="innerException">Optionally specifies the inner exception.</param>
-        public TimeoutFailure(
+        public TimeoutException(
             TimeoutType timeoutType,
             byte[]      lastHeartbeatDetails,
-            string      message        = null, 
+            string      cause,
+            Failure     failure,
+            string      message        = null,
             Exception   innerException = null)
-            : base (
-                  TemporalErrorType.Timeout,
-                  message,
-                  innerException)
+            : base (failure, message, innerException)
         {
+            Cause               = cause;
             TimeoutType         = timeoutType;
             LastHearbeatDetails = lastHeartbeatDetails;
         }
@@ -52,11 +52,16 @@ namespace Neon.Temporal
         /// <summary>
         /// Specifies the type of timeout.
         /// </summary>
-        public TimeoutType TimeoutType { get; }
+        public TimeoutType TimeoutType { get; set;  }
 
         /// <summary>
         /// Encodes details of the last heartbeat before timeout.
         /// </summary>
-        public byte[] LastHearbeatDetails { get; }
+        public byte[] LastHearbeatDetails { get; set;  }
+
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
+        internal override TemporalErrorType TemporalErrorType => TemporalErrorType.Timeout;
     }
 }

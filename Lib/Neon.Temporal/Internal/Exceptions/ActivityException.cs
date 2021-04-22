@@ -1,5 +1,5 @@
 ﻿//-----------------------------------------------------------------------------
-// FILE:	    ActivityFailure.cs
+// FILE:	    ActivityException.cs
 // CONTRIBUTOR: Jack Burns
 // COPYRIGHT:	Copyright (c) 2005-2021 by neonFORGE LLC.  All rights reserved.
 //
@@ -19,16 +19,14 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-using Neon.Temporal.Internal;
-
-namespace Neon.Temporal
+namespace Neon.Temporal.Internal
 {
     /// <summary>
     /// Returned from workflow when activity throws an exception.
     /// Implements <see cref="TemporalFailure"/> that can be
     /// unwrapped to get the actual cause of the failure.
     /// </summary>
-    public class ActivityFailure : TemporalFailure
+    public class ActivityException : TemporalFailure
     {
         /// <summary>
         /// Constructor.
@@ -39,22 +37,24 @@ namespace Neon.Temporal
         /// <param name="retryState">Specifies the retry state of the activity.</param>
         /// <param name="scheduledEventId">Specifies the scheduled event id of the activity.</param>
         /// <param name="startedEventId">Specifies the started event id of the activity.</param>
+        /// <param name="cause">The cause of the exception.</param>
+        /// <param name="failure">The original failure.</param>
         /// <param name="message">Optionally specifies a message.</param>
         /// <param name="innerException">Optionally specifies the inner exception.</param>
-        public ActivityFailure(
+        public ActivityException(
             string       activityId,
             string       identity,
             ActivityType activityType,
             RetryState   retryState,
             long         scheduledEventId,
             long         startedEventId,
+            string       cause,
+            Failure      failure,
             string       message        = null, 
             Exception    innerException = null)
-            : base(
-                    TemporalErrorType.Activity,
-                    message,
-                    innerException)
+            : base(failure, message, innerException)
         {
+            Cause            = cause;
             ActivityId       = activityId;
             Identity         = identity;
             RetryState       = retryState;
@@ -66,33 +66,38 @@ namespace Neon.Temporal
         /// <summary>
         /// The <see cref="string"/> id of the activity.
         /// </summary>
-        public string ActivityId { get; }
+        public string ActivityId { get; set; }
 
         /// <summary>
         /// The <see cref="string"/> identity of the activity.
         /// </summary>
-        public string Identity { get; }
+        public string Identity { get; set; }
 
         /// <summary>
         /// The <see cref="Temporal.RetryState"/> of the activity.
         /// This will reflect the retry behavior of the activity on
         /// failure.
         /// </summary>
-        public RetryState RetryState { get; }
+        public RetryState RetryState { get; set; }
 
         /// <summary>
         /// TODO JACK: Figure out what this is.
         /// </summary>
-        public long ScheduledEventId { get; }
+        public long ScheduledEventId { get; set; }
 
         /// <summary>
         /// TODO JACK: Figure this out.
         /// </summary>
-        public long StartedEventId { get; }
+        public long StartedEventId { get; set; }
 
         /// <summary>
         /// The <see cref="Internal.ActivityType"/> type of the activity.
         /// </summary>
-        public ActivityType ActivityType { get; }
+        public ActivityType ActivityType { get; set; }
+
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
+        internal override TemporalErrorType TemporalErrorType => TemporalErrorType.Activity;
     }
 }
