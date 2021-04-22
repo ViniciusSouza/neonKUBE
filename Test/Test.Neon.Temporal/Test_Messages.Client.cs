@@ -146,7 +146,7 @@ namespace TestTemporal
 
                 Assert.Equal(444, message.ClientId);
                 Assert.Equal(555, message.RequestId);
-                Assert.Equal("MyError", message.Error.String);
+                Assert.Equal("MyError", message.Error.ErrorJson);
 
                 stream.SetLength(0);
                 stream.Write(message.SerializeAsBytes());
@@ -156,7 +156,7 @@ namespace TestTemporal
                 Assert.NotNull(message);
                 Assert.Equal(444, message.ClientId);
                 Assert.Equal(555, message.RequestId);
-                Assert.Equal("MyError", message.Error.String);
+                Assert.Equal("MyError", message.Error.ErrorJson);
 
                 // Clone()
 
@@ -164,7 +164,7 @@ namespace TestTemporal
                 Assert.NotNull(message);
                 Assert.Equal(444, message.ClientId);
                 Assert.Equal(555, message.RequestId);
-                Assert.Equal("MyError", message.Error.String);
+                Assert.Equal("MyError", message.Error.ErrorJson);
 
                 // Echo the message via the associated [temporal-proxy] and verify.
 
@@ -172,7 +172,7 @@ namespace TestTemporal
                 Assert.NotNull(message);
                 Assert.Equal(444, message.ClientId);
                 Assert.Equal(555, message.RequestId);
-                Assert.Equal("MyError", message.Error.String);
+                Assert.Equal("MyError", message.Error.ErrorJson);
             }
         }
 
@@ -305,7 +305,7 @@ namespace TestTemporal
 
                 Assert.Equal(444, message.ClientId);
                 Assert.Equal(555, message.RequestId);
-                Assert.Equal("MyError", message.Error.String);
+                Assert.Equal("MyError", message.Error.ErrorJson);
 
                 stream.SetLength(0);
                 stream.Write(message.SerializeAsBytes());
@@ -329,7 +329,7 @@ namespace TestTemporal
                 Assert.NotNull(message);
                 Assert.Equal(444, message.ClientId);
                 Assert.Equal(555, message.RequestId);
-                Assert.Equal("MyError", message.Error.String);
+                Assert.Equal("MyError", message.Error.ErrorJson);
             }
         }
 
@@ -435,7 +435,7 @@ namespace TestTemporal
 
                 Assert.Equal(444, message.ClientId);
                 Assert.Equal(555, message.RequestId);
-                Assert.Equal("MyError", message.Error.String);
+                Assert.Equal("MyError", message.Error.ErrorJson);
                 Assert.True(message.IsGlobalNamespace);
                 Assert.Equal((Int64)1, message.FailoverVersion);
                 ValidateTestNamespaceConfig(message.NamespaceConfig);
@@ -450,7 +450,7 @@ namespace TestTemporal
                 Assert.NotNull(message);
                 Assert.Equal(444, message.ClientId);
                 Assert.Equal(555, message.RequestId);
-                Assert.Equal("MyError", message.Error.String);
+                Assert.Equal("MyError", message.Error.ErrorJson);
                 Assert.True(message.IsGlobalNamespace);
                 Assert.Equal((Int64)1, message.FailoverVersion);
                 ValidateTestNamespaceConfig(message.NamespaceConfig);
@@ -463,7 +463,7 @@ namespace TestTemporal
                 Assert.NotNull(message);
                 Assert.Equal(444, message.ClientId);
                 Assert.Equal(555, message.RequestId);
-                Assert.Equal("MyError", message.Error.String);
+                Assert.Equal("MyError", message.Error.ErrorJson);
                 Assert.True(message.IsGlobalNamespace);
                 Assert.Equal((Int64)1, message.FailoverVersion);
                 ValidateTestNamespaceConfig(message.NamespaceConfig);
@@ -476,7 +476,7 @@ namespace TestTemporal
                 Assert.NotNull(message);
                 Assert.Equal(444, message.ClientId);
                 Assert.Equal(555, message.RequestId);
-                Assert.Equal("MyError", message.Error.String);
+                Assert.Equal("MyError", message.Error.ErrorJson);
                 Assert.True(message.IsGlobalNamespace);
                 Assert.Equal((Int64)1, message.FailoverVersion);
                 ValidateTestNamespaceConfig(message.NamespaceConfig);
@@ -595,7 +595,7 @@ namespace TestTemporal
 
                 Assert.Equal(444, message.ClientId);
                 Assert.Equal(555, message.RequestId);
-                Assert.Equal("MyError", message.Error.String);
+                Assert.Equal("MyError", message.Error.ErrorJson);
 
                 stream.SetLength(0);
                 stream.Write(message.SerializeAsBytes());
@@ -605,7 +605,7 @@ namespace TestTemporal
                 Assert.NotNull(message);
                 Assert.Equal(444, message.ClientId);
                 Assert.Equal(555, message.RequestId);
-                Assert.Equal("MyError", message.Error.String);
+                Assert.Equal("MyError", message.Error.ErrorJson);
 
                 // Clone()
 
@@ -613,7 +613,7 @@ namespace TestTemporal
                 Assert.NotNull(message);
                 Assert.Equal(444, message.ClientId);
                 Assert.Equal(555, message.RequestId);
-                Assert.Equal("MyError", message.Error.String);
+                Assert.Equal("MyError", message.Error.ErrorJson);
 
                 // Echo the message via the associated [temporal-proxy] and verify.
 
@@ -621,7 +621,7 @@ namespace TestTemporal
                 Assert.NotNull(message);
                 Assert.Equal(444, message.ClientId);
                 Assert.Equal(555, message.RequestId);
-                Assert.Equal("MyError", message.Error.String);
+                Assert.Equal("MyError", message.Error.ErrorJson);
             }
         }
 
@@ -747,7 +747,7 @@ namespace TestTemporal
 
                 Assert.Equal(444, message.ClientId);
                 Assert.Equal(555, message.RequestId);
-                Assert.Equal("MyError", message.Error.String);
+                Assert.Equal("MyError", message.Error.ErrorJson);
                 stream.SetLength(0);
                 stream.Write(message.SerializeAsBytes());
                 stream.Seek(0, SeekOrigin.Begin);
@@ -756,7 +756,7 @@ namespace TestTemporal
                 Assert.NotNull(message);
                 Assert.Equal(444, message.ClientId);
                 Assert.Equal(555, message.RequestId);
-                Assert.Equal("MyError", message.Error.String);
+                Assert.Equal("MyError", message.Error.ErrorJson);
 
                 // Clone()
 
@@ -764,7 +764,7 @@ namespace TestTemporal
                 Assert.NotNull(message);
                 Assert.Equal(444, message.ClientId);
                 Assert.Equal(555, message.RequestId);
-                Assert.Equal("MyError", message.Error.String);
+                Assert.Equal("MyError", message.Error.ErrorJson);
 
                 // Echo the message via the associated [temporal-proxy] and verify.
 
@@ -772,7 +772,7 @@ namespace TestTemporal
                 Assert.NotNull(message);
                 Assert.Equal(444, message.ClientId);
                 Assert.Equal(555, message.RequestId);
-                Assert.Equal("MyError", message.Error.String);
+                Assert.Equal("MyError", message.Error.ErrorJson);
             }
         }
 
@@ -861,7 +861,7 @@ namespace TestTemporal
 
                 Assert.Equal(444, message.ClientId);
                 Assert.Equal(555, message.RequestId);
-                Assert.Equal("MyError", message.Error.String);
+                Assert.Equal("MyError", message.Error.ErrorJson);
 
                 stream.SetLength(0);
                 stream.Write(message.SerializeAsBytes());
@@ -871,7 +871,7 @@ namespace TestTemporal
                 Assert.NotNull(message);
                 Assert.Equal(444, message.ClientId);
                 Assert.Equal(555, message.RequestId);
-                Assert.Equal("MyError", message.Error.String);
+                Assert.Equal("MyError", message.Error.ErrorJson);
 
                 // Clone()
 
@@ -879,7 +879,7 @@ namespace TestTemporal
                 Assert.NotNull(message);
                 Assert.Equal(444, message.ClientId);
                 Assert.Equal(555, message.RequestId);
-                Assert.Equal("MyError", message.Error.String);
+                Assert.Equal("MyError", message.Error.ErrorJson);
 
                 // Echo the message via the associated [temporal-proxy] and verify.
 
@@ -887,7 +887,7 @@ namespace TestTemporal
                 Assert.NotNull(message);
                 Assert.Equal(444, message.ClientId);
                 Assert.Equal(555, message.RequestId);
-                Assert.Equal("MyError", message.Error.String);
+                Assert.Equal("MyError", message.Error.ErrorJson);
             }
         }
 
@@ -977,7 +977,7 @@ namespace TestTemporal
 
                 Assert.Equal(444, message.ClientId);
                 Assert.Equal(555, message.RequestId);
-                Assert.Equal("MyError", message.Error.String);
+                Assert.Equal("MyError", message.Error.ErrorJson);
 
                 stream.SetLength(0);
                 stream.Write(message.SerializeAsBytes());
@@ -987,7 +987,7 @@ namespace TestTemporal
                 Assert.NotNull(message);
                 Assert.Equal(444, message.ClientId);
                 Assert.Equal(555, message.RequestId);
-                Assert.Equal("MyError", message.Error.String);
+                Assert.Equal("MyError", message.Error.ErrorJson);
 
                 // Clone()
 
@@ -995,7 +995,7 @@ namespace TestTemporal
                 Assert.NotNull(message);
                 Assert.Equal(444, message.ClientId);
                 Assert.Equal(555, message.RequestId);
-                Assert.Equal("MyError", message.Error.String);
+                Assert.Equal("MyError", message.Error.ErrorJson);
 
                 // Echo the message via the associated [temporal-proxy] and verify.
 
@@ -1003,7 +1003,7 @@ namespace TestTemporal
                 Assert.NotNull(message);
                 Assert.Equal(444, message.ClientId);
                 Assert.Equal(555, message.RequestId);
-                Assert.Equal("MyError", message.Error.String);
+                Assert.Equal("MyError", message.Error.ErrorJson);
             }
         }
 
@@ -1099,7 +1099,7 @@ namespace TestTemporal
 
                 Assert.Equal(444, message.ClientId);
                 Assert.Equal(555, message.RequestId);
-                Assert.Equal("MyError", message.Error.String);
+                Assert.Equal("MyError", message.Error.ErrorJson);
                 Assert.True(message.WasCancelled);
 
                 stream.SetLength(0);
@@ -1110,7 +1110,7 @@ namespace TestTemporal
                 Assert.NotNull(message);
                 Assert.Equal(444, message.ClientId);
                 Assert.Equal(555, message.RequestId);
-                Assert.Equal("MyError", message.Error.String);
+                Assert.Equal("MyError", message.Error.ErrorJson);
                 Assert.True(message.WasCancelled);
 
                 // Clone()
@@ -1119,7 +1119,7 @@ namespace TestTemporal
                 Assert.NotNull(message);
                 Assert.Equal(444, message.ClientId);
                 Assert.Equal(555, message.RequestId);
-                Assert.Equal("MyError", message.Error.String);
+                Assert.Equal("MyError", message.Error.ErrorJson);
                 Assert.True(message.WasCancelled);
 
                 // Echo the message via the associated [temporal-proxy] and verify.
@@ -1129,7 +1129,7 @@ namespace TestTemporal
                 Assert.Equal(444, message.ClientId);
                 Assert.Equal(555, message.RequestId);
                 Assert.True(message.WasCancelled);
-                Assert.Equal("MyError", message.Error.String);
+                Assert.Equal("MyError", message.Error.ErrorJson);
             }
         }
 

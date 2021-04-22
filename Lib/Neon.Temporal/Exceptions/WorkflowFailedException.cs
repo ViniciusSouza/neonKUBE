@@ -1,5 +1,5 @@
 ﻿//-----------------------------------------------------------------------------
-// FILE:	    WorkflowTypeException.cs
+// FILE:	    WorkflowFailedExcpetion.cs
 // CONTRIBUTOR: John Burns
 // COPYRIGHT:	Copyright (c) 2005-2021 by neonFORGE LLC.  All rights reserved.
 //
@@ -16,51 +16,52 @@
 // limitations under the License.
 
 using System;
+using System.Collections.Generic;
+using System.Text;
 
 using Neon.Temporal.Internal;
 
 namespace Neon.Temporal
 {
     /// <summary>
-    /// Thrown when ak workflow interface or implementation is not valid.
+    /// Indicates that a workflow failed.
     /// </summary>
-    public class WorkflowException : TemporalException
+    public class WorkflowFailedException : WorkflowException
     {
-        /// <summary>
-        /// Default constructor.
-        /// </summary>
-        public WorkflowException()
-        {
-        }
-
         /// <summary>
         /// Constructor.
         /// </summary>
+        /// <param name="retryState">The retry state of the failed workflow.</param>
+        /// <param name="workflowTask">The task on which the workflow failed.</param>
         /// <param name="execution">The execution that raised the exception.</param>
         /// <param name="workflowType">The type of the workflow that raised the exception.</param>
         /// <param name="message">Optionally specifies a message.</param>
         /// <param name="innerException">Optionally specifies the inner exception.</param>
-        public WorkflowException(
+        public WorkflowFailedException(
+            RetryState        retryState,
+            string            workflowTask,
             WorkflowExecution execution,
             WorkflowType      workflowType,
-            string            message        = null ,
+            string            message        = null,
             Exception         innerException = null)
-            : base(message, innerException)
+            : base(
+                  execution,
+                  workflowType,
+                  message,
+                  innerException)
         {
-            Execution    = execution;
-            WorkflowType = workflowType;
+            this.RetryState   = retryState;
+            this.WorkflowTask = workflowTask;
         }
 
-        internal override TemporalErrorType TemporalErrorType => TemporalErrorType.WorkflowExecution;
+        /// <summary>
+        /// The retry state of the failed workflow.
+        /// </summary>
+        public RetryState RetryState { get; }
 
         /// <summary>
-        /// The execution that raised the exception.
+        /// The task on which the workflow failed.
         /// </summary>
-        public WorkflowExecution Execution { get; }
-
-        /// <summary>
-        /// The type of the workflow that raised the exception.
-        /// </summary>
-        public WorkflowType WorkflowType { get; }
+        public string WorkflowTask { get; }
     }
 }

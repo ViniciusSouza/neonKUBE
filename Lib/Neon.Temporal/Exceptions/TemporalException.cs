@@ -27,6 +27,8 @@ namespace Neon.Temporal
     /// </summary>
     public abstract class TemporalException : Exception
     {
+        private string cause;
+
         /// <summary>
         /// Constructor.
         /// </summary>
@@ -50,12 +52,21 @@ namespace Neon.Temporal
         internal abstract TemporalErrorType TemporalErrorType { get; }
 
         /// <summary>
+        /// The Temporal error cause used for specifying non-retryable errors.
+        /// </summary>
+        internal string Cause
+        {
+            get => cause ?? TemporalError;
+            set => cause = value;
+        }
+
+        /// <summary>
         /// Converts the exception into a <see cref="TemporalError"/>.
         /// </summary>
         /// <returns>The <see cref="TemporalError"/>.</returns>
         internal virtual TemporalError ToTemporalError()
         {
-            return new TemporalError($"{Message}", TemporalErrorType);
+            return new TemporalError($"{Cause}{{{Message}}}", TemporalErrorType);
         }
     }
 }

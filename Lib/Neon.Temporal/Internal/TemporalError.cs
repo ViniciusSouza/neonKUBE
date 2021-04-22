@@ -78,7 +78,7 @@ namespace Neon.Temporal.Internal
 
                 if (constructor == null)
                 {
-                    throw new Exception($"Type [{type.Name}:{temporalExceptionType.Name}] does not have a constructor like: [{type.Name}(string, Exception)].");
+                    throw new Exception($"ErrorType [{type.Name}:{temporalExceptionType.Name}] does not have a constructor like: [{type.Name}(string, Exception)].");
                 }
 
                 var exception = (TemporalException)constructor.Invoke(new object[] { string.Empty, null });
@@ -103,12 +103,18 @@ namespace Neon.Temporal.Internal
         {
             switch (typeString)
             {
-                case "cancelled":   return TemporalErrorType.Cancelled;
-                case "custom":      return TemporalErrorType.Custom;
-                case "generic":     return TemporalErrorType.Generic;
-                case "panic":       return TemporalErrorType.Panic;
-                case "terminated":  return TemporalErrorType.Terminated;
-                case "timeout":     return TemporalErrorType.Timeout;
+                case "generic":                          return TemporalErrorType.Generic;
+                case "custom":                           return TemporalErrorType.Custom;
+                case "canceled":                         return TemporalErrorType.Canceled;
+                case "activity":                         return TemporalErrorType.Activity;
+                case "application":                      return TemporalErrorType.Application;
+                case "server":                           return TemporalErrorType.Server;
+                case "childWorkflowExecution":           return TemporalErrorType.ChildWorkflowExecution;
+                case "workflowExecution":                return TemporalErrorType.WorkflowExecution;
+                case "panic":                            return TemporalErrorType.Panic;
+                case "terminated":                       return TemporalErrorType.Terminated;
+                case "timeout":                          return TemporalErrorType.Timeout;
+                case "unknownExternalWorkflowExecution": return TemporalErrorType.UnknownExternalWorkflowExecution;
 
                 // $todo(jefflill): 
                 //    
@@ -133,12 +139,18 @@ namespace Neon.Temporal.Internal
         {
             switch (type)
             {
-                case TemporalErrorType.Cancelled:   return "cancelled";
-                case TemporalErrorType.Custom:      return "custom";
-                case TemporalErrorType.Generic:     return "generic";
-                case TemporalErrorType.Panic:       return "panic";
-                case TemporalErrorType.Terminated:  return "terminated";
-                case TemporalErrorType.Timeout:     return "timeout";
+                case TemporalErrorType.Generic:                          return "generic";
+                case TemporalErrorType.Custom:                           return "custom";
+                case TemporalErrorType.Canceled:                         return "canceled";
+                case TemporalErrorType.Activity:                         return "activity";
+                case TemporalErrorType.Application:                      return "application";
+                case TemporalErrorType.Server:                           return "server";
+                case TemporalErrorType.ChildWorkflowExecution:           return "childWorkflowExecution";
+                case TemporalErrorType.WorkflowExecution:                return "workflowExecution";
+                case TemporalErrorType.Panic:                            return "panic";
+                case TemporalErrorType.Terminated:                       return "terminated";
+                case TemporalErrorType.Timeout:                          return "timeout";
+                case TemporalErrorType.UnknownExternalWorkflowExecution: return "unknownExternalWorkflowExecution";
 
                 default:
 
@@ -165,7 +177,7 @@ namespace Neon.Temporal.Internal
         {
             Covenant.Requires<ArgumentNullException>(!string.IsNullOrEmpty(error), nameof(error));
 
-            this.String = error;
+            this.ErrorJson = error;
             this.SetErrorType(type);
         }
 
@@ -177,38 +189,38 @@ namespace Neon.Temporal.Internal
         {
             Covenant.Requires<ArgumentNullException>(e != null, nameof(e));
 
-            this.String = $"{e.GetType().FullName}{{{e.Message}}}";
+            this.ErrorJson = $"{e.GetType().FullName}{{{e.Message}}}";
 
             var temporalException = e as TemporalException;
 
             if (temporalException != null)
             {
-                this.Type = ErrorTypeToString(temporalException.TemporalErrorType);
+                this.ErrorType = ErrorTypeToString(temporalException.TemporalErrorType);
             }
             else
             {
-                this.Type = "custom";
+                this.ErrorType = "custom";
             }
         }
 
         /// <summary>
         /// Specifies the GOLANG error string.
         /// </summary>
-        [JsonProperty(PropertyName = "String", Required = Required.Always)]
-        public string String { get; set; }
+        [JsonProperty(PropertyName = "ErrorJson", Required = Required.Always)]
+        public string ErrorJson { get; set; }
 
         /// <summary>
         /// Optionally specifies the GOLANG error type.
         /// </summary>
-        [JsonProperty(PropertyName = "Type", Required = Required.Always)]
-        public string Type { get; set; }
+        [JsonProperty(PropertyName = "ErrorType", Required = Required.Always)]
+        public string ErrorType { get; set; }
 
         /// <summary>
         /// Returns the error type.
         /// </summary>
         internal TemporalErrorType GetErrorType()
         {
-            return StringToErrorType(Type);
+            return StringToErrorType(ErrorType);
         }
 
         /// <summary>
@@ -217,7 +229,7 @@ namespace Neon.Temporal.Internal
         /// <param name="type">The new type.</param>
         internal void SetErrorType(TemporalErrorType type)
         {
-            Type = ErrorTypeToString(type);
+            ErrorType = ErrorTypeToString(type);
         }
 
         /// <summary>
@@ -230,45 +242,44 @@ namespace Neon.Temporal.Internal
             //
             // We're depending on Temporal error strings looking like this:
             //
-            //      REASON{MESSAGE}
+            //      CAUSE{MESSAGE}
             //
             // where:
             //
-            //      REASON      - identifies the error
-            //      MESSAGE     - describes the error in more detail
+            //      CAUSE      - identifies the error
+            //      MESSAGE    - describes the error in more detail
             //
             // For robustness, we'll also handle the situation where there
             // is no {MESSAGE} part.
 
-            string reason;
+            string cause;
             string message;
 
-            var startingBracePos = String.IndexOf('{');
-            var endingBracePos   = String.LastIndexOf('}');
+            var startingBracePos = ErrorJson.IndexOf('{');
+            var endingBracePos   = ErrorJson.LastIndexOf('}');
 
             if (startingBracePos != -1 && endingBracePos != 1)
             {
-                reason  = String.Substring(0, startingBracePos);
-                message = String.Substring(startingBracePos + 1, endingBracePos - (startingBracePos + 1));
+                cause  = ErrorJson.Substring(0, startingBracePos);
+                message = ErrorJson.Substring(startingBracePos + 1, endingBracePos - (startingBracePos + 1));
             }
             else
             {
-                reason  = String;
+                cause   = ErrorJson;
                 message = string.Empty;
             }
 
             // We're going to save the details as the exception [Message] property and
-            // save the error to the [Reason] property.
+            // save the error to the [Cause] property.
             //
-            // First, we're going to try mapping the error reason to one of the
+            // First, we're going to try mapping the error cause to one of the
             // predefined Cadence exceptions and if that doesn't work, we'll generate
             // a more generic exception.
 
-            if (goErrorToConstructor.TryGetValue(reason, out var constructor))
+            if (goErrorToConstructor.TryGetValue(cause, out var constructor))
             {
-                var e = (TemporalException)constructor.Invoke(new object[] { reason, null });
-
-                e.Reason = reason;
+                var e   = (TemporalException)constructor.Invoke(new object[] { cause, null });
+                e.Cause = cause;
 
                 return e;
             }
@@ -277,42 +288,49 @@ namespace Neon.Temporal.Internal
 
             switch (errorType)
             {
-                case TemporalErrorType.Cancelled:
+                case TemporalErrorType.Generic:
 
-                    return new CanceledException(message) { Reason = reason };
+                    throw new NotImplementedException();
 
                 case TemporalErrorType.Custom:
 
-                    return new TemporalCustomException(message) { Reason = reason };
+                    throw new NotImplementedException();
 
-                case TemporalErrorType.Generic:
+                case TemporalErrorType.Canceled:
 
-                    return new TemporalGenericException(message) { Reason = reason };
+                    throw new NotImplementedException();
+
+                case TemporalErrorType.Activity:
+
+                    throw new NotImplementedException();
+
+                case TemporalErrorType.Server:
+
+                    throw new NotImplementedException();
+
+                case TemporalErrorType.ChildWorkflowExecution:
+
+                    throw new NotImplementedException();
+
+                case TemporalErrorType.WorkflowExecution:
+
+                    throw new NotImplementedException();
 
                 case TemporalErrorType.Panic:
 
-                    return new TemporalPanicException(message) { Reason = reason };
+                    throw new NotImplementedException();
 
                 case TemporalErrorType.Terminated:
 
-                    return new TerminatedException(message) { Reason = reason };
+                    throw new NotImplementedException();
 
                 case TemporalErrorType.Timeout:
 
-                    // Special case timeout exceptions.
+                    throw new NotImplementedException();
 
-                    switch (reason)
-                    {
-                        case "TimeoutType: START_TO_CLOSE":
+                case TemporalErrorType.UnknownExternalWorkflowExecution:
 
-                            return new StartToCloseTimeoutException();
-
-                        case "TimeoutType: HEARTBEAT":
-
-                            return new ActivityHeartbeatTimeoutException();
-                    }
-
-                    return new TemporalTimeoutException(message);
+                    throw new NotImplementedException();
 
                 default:
 
@@ -323,7 +341,7 @@ namespace Neon.Temporal.Internal
         /// <inheritdoc/>
         public override string ToString()
         {
-            return String;
+            return ErrorJson;
         }
     }
 }

@@ -200,7 +200,7 @@ namespace TestTemporal
 
                 Assert.Equal(444, message.ClientId);
                 Assert.Equal(555, message.RequestId);
-                Assert.Equal("MyError", message.Error.String);
+                Assert.Equal("MyError", message.Error.ErrorJson);
 
                 stream.SetLength(0);
                 stream.Write(message.SerializeAsBytes(ignoreTypeCode: true));
@@ -210,7 +210,7 @@ namespace TestTemporal
                 Assert.NotNull(message);
                 Assert.Equal(444, message.ClientId);
                 Assert.Equal(555, message.RequestId);
-                Assert.Equal("MyError", message.Error.String);
+                Assert.Equal("MyError", message.Error.ErrorJson);
 
                 // Clone()
 
@@ -218,7 +218,7 @@ namespace TestTemporal
                 Assert.NotNull(message);
                 Assert.Equal(444, message.ClientId);
                 Assert.Equal(555, message.RequestId);
-                Assert.Equal("MyError", message.Error.String);
+                Assert.Equal("MyError", message.Error.ErrorJson);
             }
         }
 
@@ -309,7 +309,7 @@ namespace TestTemporal
 
                 Assert.Equal(444, message.ClientId);
                 Assert.Equal(555, message.RequestId);
-                Assert.Equal("MyError", message.Error.String);
+                Assert.Equal("MyError", message.Error.ErrorJson);
                 Assert.Equal(666, message.ActivityContextId);
 
                 stream.SetLength(0);
@@ -320,7 +320,7 @@ namespace TestTemporal
                 Assert.NotNull(message);
                 Assert.Equal(444, message.ClientId);
                 Assert.Equal(555, message.RequestId);
-                Assert.Equal("MyError", message.Error.String);
+                Assert.Equal("MyError", message.Error.ErrorJson);
                 Assert.Equal(666, message.ActivityContextId);
 
                 // Clone()
@@ -329,7 +329,7 @@ namespace TestTemporal
                 Assert.NotNull(message);
                 Assert.Equal(444, message.ClientId);
                 Assert.Equal(555, message.RequestId);
-                Assert.Equal("MyError", message.Error.String);
+                Assert.Equal("MyError", message.Error.ErrorJson);
                 Assert.Equal(666, message.ActivityContextId);
             }
         }
@@ -423,7 +423,7 @@ namespace TestTemporal
 
                 Assert.Equal(444, message.ClientId);
                 Assert.Equal(555, message.RequestId);
-                Assert.Equal("MyError", message.Error.String);
+                Assert.Equal("MyError", message.Error.ErrorJson);
                 Assert.Equal(666, message.ContextId);
                 Assert.Equal(InternalReplayStatus.Replaying, message.ReplayStatus);
 
@@ -435,7 +435,7 @@ namespace TestTemporal
                 Assert.NotNull(message);
                 Assert.Equal(444, message.ClientId);
                 Assert.Equal(555, message.RequestId);
-                Assert.Equal("MyError", message.Error.String);
+                Assert.Equal("MyError", message.Error.ErrorJson);
                 Assert.Equal(666, message.ContextId);
                 Assert.Equal(InternalReplayStatus.Replaying, message.ReplayStatus);
 
@@ -445,7 +445,7 @@ namespace TestTemporal
                 Assert.NotNull(message);
                 Assert.Equal(444, message.ClientId);
                 Assert.Equal(555, message.RequestId);
-                Assert.Equal("MyError", message.Error.String);
+                Assert.Equal("MyError", message.Error.ErrorJson);
                 Assert.Equal(666, message.ContextId);
                 Assert.Equal(InternalReplayStatus.Replaying, message.ReplayStatus);
             }

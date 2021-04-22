@@ -85,7 +85,7 @@ namespace Neon.Temporal.Internal
         {
             var error = this.Error;
 
-            if (error != null && !string.IsNullOrEmpty(error.String))
+            if (error != null && !string.IsNullOrEmpty(error.ErrorJson))
             {
                 throw error.ToException();
             }

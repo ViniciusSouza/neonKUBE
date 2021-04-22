@@ -1,6 +1,6 @@
 ﻿//-----------------------------------------------------------------------------
-// FILE:	    ActivityHeartbeatTimeoutException.cs
-// CONTRIBUTOR: Jeff Lill
+// FILE:	    WorkflowQueryException.cs
+// CONTRIBUTOR: John Burns
 // COPYRIGHT:	Copyright (c) 2005-2021 by neonFORGE LLC.  All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,31 +16,36 @@
 // limitations under the License.
 
 using System;
+using System.Collections.Generic;
+using System.Text;
 
 using Neon.Temporal.Internal;
 
 namespace Neon.Temporal
 {
     /// <summary>
-    /// Thrown when an activity did not send a timely heartbeat to Temporal.
+    /// Thrown when there was a failure to query a workflow.
     /// </summary>
-    public class ActivityHeartbeatTimeoutException : TemporalTimeoutException
+    public class WorkflowQueryException : WorkflowException
     {
         /// <summary>
         /// Constructor.
         /// </summary>
+        /// <param name="execution">The execution that raised the exception.</param>
+        /// <param name="workflowType">The type of the workflow that raised the exception.</param>
         /// <param name="message">Optionally specifies a message.</param>
-        /// <param name="innerException">Optionally specifies an inner exception.</param>
-        public ActivityHeartbeatTimeoutException(string message = null, Exception innerException = null)
-            : base(message, innerException)
+        /// <param name="innerException">Optionally specifies the inner exception.</param>
+        public WorkflowQueryException(
+            WorkflowExecution execution,
+            WorkflowType      workflowType,
+            string            message        = null,
+            Exception         innerException = null)
+            : base(
+                  execution,
+                  workflowType,
+                  message,
+                  innerException)
         {
-            base.Cause = "cadenceInternal:Timeout HEARTBEAT";
         }
-
-        /// <inheritdoc/>
-        internal override TemporalErrorType TemporalErrorType => TemporalErrorType.Timeout;
-
-        /// <inheritdoc/>
-        internal override string TemporalError => "ActivityHeartbeatTimeoutError";
     }
 }

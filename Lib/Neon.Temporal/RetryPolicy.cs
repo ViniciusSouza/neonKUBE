@@ -177,7 +177,7 @@ namespace Neon.Temporal
 
                 var temporalException = Activator.CreateInstance<ExceptionType>() as TemporalException;
 
-                NonRetriableErrors.Add(temporalException.Reason);
+                NonRetriableErrors.Add(temporalException.Cause);
             }
             else
             {
