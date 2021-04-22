@@ -91,12 +91,9 @@ namespace Neon.Xunit.Cadence
 @"version: '3'
 services:
   cassandra:
-    image: cassandra:3.11
+    image: ghcr.io/neonrelease-dev/cassandra:3.11.10
     ports:
       - 9042:9042
-    environment:
-      - HEAP_NEWSIZE=1M
-      - MAX_HEAP_SIZE=1024M
     deploy:
       resources:
         limits:
@@ -388,8 +385,10 @@ services:
                     LogLevel      = logLevel
                 };
 
-                settings.Servers.Clear();
-                settings.Servers.Add($"http://10.0.0.2:{NetworkPorts.Cadence}");
+                if (settings.Servers.Count == 0)
+                {
+                    settings.Servers.Add($"http://localhost:{NetworkPorts.Cadence}");
+                }
 
                 this.settings  = settings;
                 this.reconnect = reconnect;

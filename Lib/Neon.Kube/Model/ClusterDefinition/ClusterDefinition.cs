@@ -84,6 +84,8 @@ namespace Neon.Kube
             {
                 using (var preprocessReader = new PreprocessReader(stringReader))
                 {
+                    preprocessReader.SetYamlMode();
+
                     var clusterDefinition = NeonHelper.YamlDeserialize<ClusterDefinition>(preprocessReader.ReadToEnd(), strict: strict);
 
                     clusterDefinition.Validate();
@@ -125,11 +127,13 @@ namespace Neon.Kube
             {
                 using (var reader = new StreamReader(stream))
                 {
-                    using (var preprocessor = new PreprocessReader(reader))
+                    using (var preprocessReader = new PreprocessReader(reader))
                     {
-                        preprocessor.ProcessStatements = true;
+                        preprocessReader.SetYamlMode();
 
-                        var clusterDefinition = NeonHelper.YamlDeserialize<ClusterDefinition>(preprocessor.ReadToEnd(), strict: strict);
+                        preprocessReader.ProcessStatements = true;
+
+                        var clusterDefinition = NeonHelper.YamlDeserialize<ClusterDefinition>(preprocessReader.ReadToEnd(), strict: strict);
 
                         if (clusterDefinition == null)
                         {
@@ -218,9 +222,9 @@ namespace Neon.Kube
         /// </para>
         /// <note>
         /// The name may include only letters, numbers, periods, dashes, and underscores and
-        /// may be up to 20 characters long.  Some hosting environments enforce length limits
+        /// may be up to 32 characters long.  Some hosting environments enforce length limits
         /// on resource names that we derive from the cluster name, so please limit your
-        /// cluster name to 20 characters.
+        /// cluster name to 32 characters.
         /// </note>
         /// </summary>
         [JsonProperty(PropertyName = "Name", Required = Required.Always)]
@@ -415,7 +419,7 @@ namespace Neon.Kube
         /// after cluster setup is complete, so this is a suitable place for storing generated secure credentials.
         /// </para>
         /// <para>
-        /// As a convention, dictionary keys should use a dot notation like <b>neon-cluster-manager.connstring</b>
+        /// As a convention, dictionary keys should use a dot notation like <b>neon-cluster-operator.connstring</b>
         /// to avoid naming conflicts and to make it clear what's what during debugging.
         /// </para>
         /// <note>
@@ -807,9 +811,9 @@ namespace Neon.Kube
                 throw new ClusterDefinitionException($"The [{nameof(ClusterDefinition)}.{nameof(Name)}={Name}] property is not valid.  Only letters, numbers, periods, dashes, and underscores are allowed.");
             }
 
-            if (Name.Length > 20)
+            if (Name.Length > 32)
             {
-                throw new ClusterDefinitionException($"The [{nameof(ClusterDefinition)}.{nameof(Name)}={Name}] has more than 20 characters.  Some hosting environments enforce name length limits so please trim your cluster name.");
+                throw new ClusterDefinitionException($"The [{nameof(ClusterDefinition)}.{nameof(Name)}={Name}] has more than 32 characters.  Some hosting environments enforce name length limits so please trim your cluster name.");
             }
 
             if (Datacenter == null)
@@ -834,7 +838,7 @@ namespace Neon.Kube
             }
             else if (!NeonHelper.IsOdd(masterNodeCount))
             {
-                throw new ClusterDefinitionException($"[{masterNodeCount}] master nodes is not allowed.  Only an off number of master nodes is allowed: [1, 3, or 5]");
+                throw new ClusterDefinitionException($"[{masterNodeCount}] master nodes is not allowed.  Only an odd number of master nodes is allowed: [1, 3, or 5]");
             }
 
             if (!string.IsNullOrEmpty(PackageProxy))

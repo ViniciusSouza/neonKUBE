@@ -29,6 +29,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 using Neon.Common;
+using System.Linq;
 
 namespace Neon.Deployment
 {
@@ -39,6 +40,9 @@ namespace Neon.Deployment
     /// running on behalf of the current user.
     /// </summary>
     /// <remarks>
+    /// <note>
+    /// This class currently supports only Windows.
+    /// </note>
     /// <para>
     /// This server implements simple string based request response protocol,
     /// where the client writes a line of text with the request and the server
@@ -119,6 +123,61 @@ namespace Neon.Deployment
     /// </remarks>
     public sealed class ProfileServer : IDisposable
     {
+        //---------------------------------------------------------------------
+        // Static members
+
+        /// <summary>
+        /// <para>
+        /// Parses a secret name by extracting the <b>name</b> and <b>property</b>
+        /// components.  secret names can be formatted like: <b>NAME</b> or <b>NAME[PROPERTY]</b>.
+        /// </para>
+        /// <note>
+        /// When the property syntax passed is malformed, we're just going to return the
+        /// entire input string as the name rather than throwing an exception here.  This
+        /// will probably result in a failed lookup which will be reported to the user who
+        /// will have a good chance then of figuring out what happened.
+        /// </note>
+        /// </summary>
+        /// <param name="secretName">The secret name.</param>
+        /// <returns>An anonymous structure including the name and property (if specified).</returns>
+        public static (string Name, string Property) ParseSecretName(string secretName)
+        {
+            Covenant.Requires<ArgumentNullException>(secretName != null, nameof(secretName));
+
+            var pLeftBracket  = secretName.IndexOf('[');
+            var pRightBracket = -1;
+
+            if (pLeftBracket != -1)
+            {
+                if (secretName.Last() == ']')
+                {
+                    pRightBracket = secretName.Length - 1;
+                }
+            }
+
+            if (pLeftBracket != -1 && pRightBracket != -1)
+            {
+                var name     = secretName.Substring(0, pLeftBracket);
+                var property = secretName.Substring(pLeftBracket + 1, pRightBracket - pLeftBracket - 1);
+
+                if (property == string.Empty)
+                {
+                    return (Name: name, Property: null);
+                }
+                else
+                {
+                    return (Name: name, Property: property);
+                }
+            }
+            else
+            {
+                return (Name: secretName, Property: null);
+            }
+        }
+
+        //---------------------------------------------------------------------
+        // Instance members
+
         private readonly object             syncLock = new object();
         private string                      pipeName;
         private Thread[]                    threads;
@@ -126,12 +185,18 @@ namespace Neon.Deployment
         private bool                        disposing;
 
         /// <summary>
+        /// <para>
         /// Constructor.
+        /// </para>
+        /// <note>
+        /// <see cref="ProfileServer"/> currently supports only Windows.
+        /// </note>
         /// </summary>
         /// <param name="pipeName">The server named pipe name.  This defaults to <see cref="DeploymentHelper.NeonProfileServicePipe"/>.</param>
         /// <param name="threadCount">Optionally specifies the number of threads to create to handle inbound requests.  This defaults to <b>1</b>.</param>
         public ProfileServer(string pipeName = DeploymentHelper.NeonProfileServicePipe, int threadCount = 1)
         {
+            Covenant.Requires<NotSupportedException>(NeonHelper.IsWindows, $"[{nameof(ProfileServer)}] currently only supports Windows.");
             Covenant.Requires<ArgumentNullException>(!string.IsNullOrEmpty(pipeName));
             Covenant.Requires<ArgumentException>(threadCount > 0, nameof(threadCount));
 

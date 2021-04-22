@@ -27,11 +27,13 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Newtonsoft.Json;
+using Microsoft.Extensions.DependencyInjection;
 
 using Neon.Collections;
 using Neon.Common;
 using Neon.Cryptography;
+using Neon.Deployment;
+using Neon.IO;
 using Neon.Kube;
 using Neon.Net;
 using Neon.SSH;
@@ -60,7 +62,7 @@ ARGUMENTS:
 OPTIONS:
 
     --package-caches=HOST:PORT  - Optionally specifies one or more APT Package cache
-                                  servers by hostname/IO and port.  Specify multiple
+                                  servers by hostname and port.  Specify multiple
                                   servers by separating the endpoints with spaces.
 
     --unredacted                - Runs commands with potential secrets without 
@@ -91,11 +93,18 @@ OPTIONS:
                                         WSL2:      ubuntu-20.04.20210206.wsl2.tar
                                         XenServer: ubuntu-20.04.1.xenserver.xva
 
-                          NOTE: This is required for [--debug]
+                                  NOTE: This is required for [--debug]
+
+    --automate                  - Indicates that the command must not impact neonDESKTOP
+                                  by changing the current login or Kubernetes config or
+                                  other files like cluster deployment logs.  This is
+                                  used for automated deployments that can proceed while
+                                  neonDESKTOP is doing other things.
+
 Server Requirements:
 --------------------
 
-    * Supported version of Linux (server)
+    * Ubuntu 20.04.x (server)
     * Known [sysadmin] sudoer user
     * OpenSSH installed
 ";
@@ -103,16 +112,11 @@ Server Requirements:
         private const string    logEndMarker    = "# CLUSTER-END-PREPARE-SUCCESS ####################################################";
         private const string    logFailedMarker = "# CLUSTER-END-PREPARE-FAILED #####################################################";
 
-        private ClusterProxy    cluster;
-        private HostingManager  hostingManager;
-        private string          clusterDefPath;
-        private string          packageCaches;
-
         /// <inheritdoc/>
         public override string[] Words => new string[] { "cluster", "prepare" };
 
         /// <inheritdoc/>
-        public override string[] ExtendedOptions => new string[] { "--package-caches", "--unredacted", "--remove-templates", "--debug", "--base-image-name" };
+        public override string[] ExtendedOptions => new string[] { "--package-caches", "--unredacted", "--remove-templates", "--debug", "--base-image-name", "--automate" };
 
         /// <inheritdoc/>
         public override bool NeedsSshCredentials(CommandLine commandLine) => !commandLine.HasOption("--remove-templates");
@@ -132,6 +136,12 @@ Server Requirements:
                 Program.Exit(0);
             }
 
+            // Cluster prepare/setup uses the [ProfileClient] to retrieve secrets and profile values.
+            // We need to inject an implementation for [PreprocessReader] so it will be able to
+            // perform the lookups.
+
+            NeonHelper.ServiceContainer.AddSingleton<IProfileClient>(new ProfileClient());
+
             // Handle the [--remove-templates] option.
 
             if (commandLine.HasOption("--remove-templates"))
@@ -146,6 +156,7 @@ Server Requirements:
 
             var debug         = commandLine.HasOption("--debug");
             var baseImageName = commandLine.GetOption("--base-image-name");
+            var automate      = commandLine.HasOption("--automate");
 
             if (debug && string.IsNullOrEmpty(baseImageName))
             {
@@ -155,7 +166,7 @@ Server Requirements:
 
             // Implement the command.
 
-            if (KubeHelper.CurrentContext != null)
+            if (KubeHelper.CurrentContext != null && !automate)
             {
                 Console.Error.WriteLine("*** ERROR: You are logged into a cluster.  You need to logout before preparing another.");
                 Program.Exit(1);
@@ -167,407 +178,79 @@ Server Requirements:
                 Program.Exit(1);
             }
 
-            clusterDefPath = commandLine.Arguments[0];
+            // Obtain the cluster definition.
+
+            var clusterDefPath    = commandLine.Arguments[0];
+            var clusterDefinition = (ClusterDefinition)null;
 
             if (clusterDefPath.Equals("WSL2", StringComparison.InvariantCultureIgnoreCase))
             {
                 // This special-case argument indicates that we should use the built-in 
-                // WSL2 cluster definition.  We'll make a copy of this in the user's WSL2
-                // folder if it doesn't already exist.
+                // WSL2 cluster definition.
 
-                var wsl2ClusterDefinitionPath = Path.Combine(KubeHelper.DesktopWsl2Folder, "cluster-definition.yaml");
-
-                if (!File.Exists(wsl2ClusterDefinitionPath))
+                using (var tempFile = new TempFile(KubeHelper.TempFolder))
                 {
-                    File.WriteAllText(wsl2ClusterDefinitionPath, KubeSetup.GetWsl2ClusterDefintion());
+                    File.WriteAllText(tempFile.Path, KubeSetup.GetWsl2ClusterDefintion(), Encoding.UTF8);
+                    clusterDefinition = ClusterDefinition.FromFile(tempFile.Path, strict: true);
                 }
+            }
+            else
+            {
+                ClusterDefinition.ValidateFile(clusterDefPath, strict: true);
 
-                clusterDefPath = wsl2ClusterDefinitionPath;
+                clusterDefinition = ClusterDefinition.FromFile(clusterDefPath, strict: true);
             }
 
-            ClusterDefinition.ValidateFile(clusterDefPath, strict: true);
+            // Parse any specified package cache endpoints.
 
-            var clusterDefinition = ClusterDefinition.FromFile(clusterDefPath, strict: true);
+            var packageCaches         = commandLine.GetOption("--package-caches", null);
+            var packageCacheEndpoints = new List<IPEndPoint>();
 
-            // NOTE: Cluster prepare starts new log files.
-
-            cluster = new ClusterProxy(clusterDefinition, Program.CreateNodeProxy<NodeDefinition>, appendToLog: false, defaultRunOptions: RunOptions.LogOutput | RunOptions.FaultOnError);
-
-            if (KubeHelper.Config.GetContext(cluster.Definition.Name) != null)
+            if (!string.IsNullOrEmpty(packageCaches))
             {
-                Console.Error.WriteLine($"*** ERROR: A login named [{cluster.Definition.Name}] already exists.");
-                Program.Exit(1);
-            }
-
-            // Configure global options.
-
-            if (commandLine.HasOption("--unredacted"))
-            {
-                cluster.SecureRunOptions = RunOptions.None;
-            }
-
-            try
-            {
-                //-----------------------------------------------------------------
-                // Try to ensure that no servers are already deployed on the IP addresses defined
-                // for cluster nodes because provisoning over an existing cluster will likely
-                // corrupt the existing cluster and also prevent the new cluster from provisioning 
-                // correctly.
-                //
-                // Note that we're not going to perform this check for the [BareMetal] hosting 
-                // environment because we're expecting the bare machines to be already running 
-                // with the assigned addresses and we're also not going to do this for cloud
-                // environments because we're assuming that the cluster will run in its own
-                // private network so there'll be no possibility of conflicts.
-                //
-                // We also won't do this for cloud deployments, bare metal or WSL2 because those 
-                // clusters will be running on an isolated private network and we don't do this
-                // for bare metal because we're currently assuming that the bare metal nodes are
-                // already running using the node IPs.
-
-                if (!cluster.Definition.Hosting.IsCloudProvider &&
-                    cluster.Definition.Hosting.Environment != HostingEnvironment.Wsl2 &&
-                    cluster.Definition.Hosting.Environment != HostingEnvironment.BareMetal)
+                foreach (var item in packageCaches.Split(' ', StringSplitOptions.RemoveEmptyEntries))
                 {
-                    Console.WriteLine();
-                    Console.WriteLine(" Scanning for IP address conflicts...");
-                    Console.WriteLine();
-
-                    var pingOptions   = new PingOptions(ttl: 32, dontFragment: true);
-                    var pingTimeout   = TimeSpan.FromSeconds(2);
-                    var pingConflicts = new List<NodeDefinition>();
-                    var pingAttempts  = 2;
-
-                    // I'm going to use up to 20 threads at a time here for simplicity
-                    // rather then doing this as async operations.
-
-                    var parallelOptions = new ParallelOptions()
+                    if (!NetHelper.TryParseIPv4Endpoint(item, out var endpoint))
                     {
-                        MaxDegreeOfParallelism = 20
-                    };
-
-                    Parallel.ForEach(cluster.Definition.NodeDefinitions.Values, parallelOptions,
-                        node =>
-                        {
-                            using (var pinger = new Pinger())
-                            {
-                                // We're going to try pinging up to [pingAttempts] times for each node
-                                // just in case the network is sketchy and we're losing reply packets.
-
-                                for (int i = 0; i < pingAttempts; i++)
-                                {
-                                    var reply = pinger.SendPingAsync(node.Address, (int)pingTimeout.TotalMilliseconds).Result;
-
-                                    if (reply.Status == IPStatus.Success)
-                                    {
-                                        lock (pingConflicts)
-                                        {
-                                            pingConflicts.Add(node);
-                                        }
-
-                                        break;
-                                    }
-                                }
-                            }
-                        });
-
-                    if (pingConflicts.Count > 0)
-                    {
-                        Console.Error.WriteLine($"*** ERROR: Cannot provision the cluster because [{pingConflicts.Count}] other");
-                        Console.Error.WriteLine($"***        machines conflict with the following cluster nodes:");
-                        Console.Error.WriteLine();
-
-                        foreach (var node in pingConflicts.OrderBy(n => NetHelper.AddressToUint(NetHelper.ParseIPv4Address(n.Address))))
-                        {
-                            Console.Error.WriteLine($"{node.Address, 16}:    {node.Name}");
-                        }
-
+                        Console.Error.WriteLine($"*** ERROR: [{item}] is not a valid package cache IPv4 endpoint.");
                         Program.Exit(1);
                     }
+
+                    packageCacheEndpoints.Add(endpoint);
                 }
-
-                //-----------------------------------------------------------------
-                // Perform basic environment provisioning.  This creates basic cluster components
-                // such as virtual machines, networks, load balancers, public IP addresses, security
-                // groups, etc. as required for the hosting environment.
-
-                hostingManager = new HostingManagerFactory(() => HostingLoader.Initialize()).GetManager(cluster, Program.LogPath);
-
-                if (hostingManager == null)
-                {
-                    Console.Error.WriteLine($"*** ERROR: No hosting manager for the [{cluster.Definition.Hosting.Environment}] environment could be located.");
-                    Program.Exit(1);
-                }
-
-                hostingManager.ShowStatus  = !Program.Quiet;
-                hostingManager.MaxParallel = Program.MaxParallel;
-                hostingManager.WaitSeconds = Program.WaitSeconds;
-
-                if (hostingManager.RequiresAdminPrivileges)
-                {
-                    Program.VerifyAdminPrivileges($"Provisioning to [{cluster.Definition.Hosting.Environment}] requires elevated administrator privileges.");
-                }
-
-                // Load the cluster login information if it exists and if it indicates that
-                // setup is still pending, we'll use that information (especially the generated
-                // secure SSH password).
-                //
-                // Otherwise, we'll write (or overwrite) the context file with a fresh context.
-
-                var clusterLoginPath = KubeHelper.GetClusterLoginPath((KubeContextName)$"{KubeConst.RootUser}@{clusterDefinition.Name}");
-                var clusterLogin     = ClusterLogin.Load(clusterLoginPath);
-
-                if (clusterLogin == null || !clusterLogin.SetupDetails.SetupPending)
-                {
-                    clusterLogin = new ClusterLogin(clusterLoginPath)
-                    {
-                        ClusterDefinition = clusterDefinition,
-                        SshUsername       = KubeConst.SysAdminUser,
-                        SetupDetails      = new KubeSetupDetails() { SetupPending = true }
-                    };
-
-                    clusterLogin.Save();
-                }
-
-                // Configure the setup controller state.
-
-                var setupState = new ObjectDictionary();
-
-                setupState.Add(KubeSetup.DebugModeProperty, debug);
-                setupState.Add(KubeSetup.BaseImageNameProperty, baseImageName);
-                setupState.Add(KubeSetup.ClusterProxyProperty, cluster);
-                setupState.Add(KubeSetup.ClusterLoginProperty, clusterLogin);
-                setupState.Add(KubeSetup.HostingManagerProperty, hostingManager);
-                setupState.Add(KubeSetup.HostingEnvironmentProperty, hostingManager.HostingEnvironment);
-
-                // We're going to generate a secure random password and we're going to append
-                // an extra 4-character string to ensure that the password meets Azure (and probably
-                // other cloud) minimum requirements:
-                //
-                // The supplied password must be between 6-72 characters long and must 
-                // satisfy at least 3 of password complexity requirements from the following: 
-                //
-                //      1. Contains an uppercase character
-                //      2. Contains a lowercase character
-                //      3. Contains a numeric digit
-                //      4. Contains a special character
-                //      5. Control characters are not allowed
-                //
-                // We're going to use the cloud API to configure this secure password
-                // when creating the VMs.  For on-premise hypervisor environments such
-                // as Hyper-V and XenServer, we're going use the [neon-init]
-                // service to mount a virtual DVD that will change the password before
-                // configuring the network on first boot.
-                //
-                // For bare metal, we're going to leave the password along and just use
-                // whatever the user specified when the nodes were built out.
-                //
-                // WSL2 NOTE:
-                //
-                // We're going to leave the default password in place for WSL2 distribution
-                // so that they'll be easy for the user to manage.  This isn't a security
-                // gap because WSL2 distros are configured such that OpenSSH server can
-                // only be reached from the host workstation via the internal [172.x.x.x]
-                // address and not from the external network.
-
-                var orgSshPassword = Program.MachinePassword;
-
-                if (!hostingManager.GenerateSecurePassword)
-                {
-                    clusterLogin.SshPassword = orgSshPassword;
-                    clusterLogin.Save();
-                }
-                else if (hostingManager.GenerateSecurePassword && string.IsNullOrEmpty(clusterLogin.SshPassword))
-                {
-                    clusterLogin.SshPassword = NeonHelper.GetCryptoRandomPassword(clusterDefinition.Security.PasswordLength);
-
-                    // Append a string that guarantees that the generated password meets
-                    // cloud minimum requirements.
-
-                    clusterLogin.SshPassword += ".Aa0";
-                    clusterLogin.Save();
-                }
-
-                // We're also going to generate the server's SSH key here and pass that to the hosting
-                // manager's provisioner.  We need to do this up front because some hosting environments
-                // like AWS don't allow SSH password authentication by default, so we'll need the SSH key
-                // to initialize the nodes after they've been provisioned for those environments.
-
-                if (clusterLogin.SshKey == null)
-                {
-                    // Generate a 2048 bit SSH key pair.
-
-                    clusterLogin.SshKey = KubeHelper.GenerateSshKey(cluster.Name, KubeConst.SysAdminUser);
-
-                    // We're going to use WinSCP (if it's installed) to convert the OpenSSH PEM formatted key
-                    // to the PPK format PuTTY/WinSCP requires.
-
-                    if (NeonHelper.IsWindows)
-                    {
-                        var pemKeyPath = Path.Combine(KubeHelper.TempFolder, Guid.NewGuid().ToString("d"));
-                        var ppkKeyPath = Path.Combine(KubeHelper.TempFolder, Guid.NewGuid().ToString("d"));
-
-                        try
-                        {
-                            File.WriteAllText(pemKeyPath, clusterLogin.SshKey.PrivateOpenSSH);
-
-                            ExecuteResponse result;
-
-                            try
-                            {
-                                result = NeonHelper.ExecuteCapture("winscp.com", $@"/keygen ""{pemKeyPath}"" /comment=""{cluster.Definition.Name} Key"" /output=""{ppkKeyPath}""");
-                            }
-                            catch (Win32Exception)
-                            {
-                                return; // Tolerate when WinSCP isn't installed.
-                            }
-
-                            if (result.ExitCode != 0)
-                            {
-                                Console.WriteLine(result.OutputText);
-                                Console.Error.WriteLine(result.ErrorText);
-                                Program.Exit(result.ExitCode);
-                            }
-
-                            clusterLogin.SshKey.PrivatePPK = NeonHelper.ToLinuxLineEndings(File.ReadAllText(ppkKeyPath));
-
-                            // Persist the SSH key.
-
-                            clusterLogin.Save();
-                        }
-                        finally
-                        {
-                            NeonHelper.DeleteFile(pemKeyPath);
-                            NeonHelper.DeleteFile(ppkKeyPath);
-                        }
-                    }
-                }
-
-                throw new NotImplementedException("$todo(jefflill): IMPLEMENT THIS!");
-
-                //if (!hostingManager.ProvisionAsync(controller, clusterLogin.SshPassword, orgSshPassword).Result)
-                //{
-                //    Program.Exit(1);
-                //}
-
-                // Ensure that the nodes have valid IP addresses.
-
-                cluster.Definition.ValidatePrivateNodeAddresses();
-
-                var ipAddressToServer = new Dictionary<IPAddress, NodeSshProxy<NodeDefinition>>();
-
-                foreach (var node in cluster.Nodes.OrderBy(n => n.Name))
-                {
-                    NodeSshProxy<NodeDefinition> duplicateServer;
-
-                    if (node.Address == IPAddress.Any)
-                    {
-                        throw new ArgumentException($"Node [{node.Name}] has not been assigned an IP address.");
-                    }
-
-                    if (ipAddressToServer.TryGetValue(node.Address, out duplicateServer))
-                    {
-                        throw new ArgumentException($"Nodes [{duplicateServer.Name}] and [{node.Name}] have the same IP address [{node.Metadata.Address}].");
-                    }
-
-                    ipAddressToServer.Add(node.Address, node);
-                }
-
-                // We're going to use the masters to be package caches unless the user
-                // has specified something else.
-
-                packageCaches = commandLine.GetOption("--package-caches");    // This overrides the cluster definition, when specified.
-
-                if (!string.IsNullOrEmpty(packageCaches))
-                {
-                    cluster.Definition.PackageProxy = packageCaches;
-                }
-
-                if (string.IsNullOrEmpty(cluster.Definition.PackageProxy))
-                {
-                    var sbProxies = new StringBuilder();
-
-                    foreach (var master in cluster.Masters)
-                    {
-                        sbProxies.AppendWithSeparator($"{master.Address}:{NetworkPorts.AppCacherNg}");
-                    }
-
-                    cluster.Definition.PackageProxy = sbProxies.ToString();
-                }
-
-                //-----------------------------------------------------------------
-                // Prepare the cluster.
-
-                // Write the operation begin marker to all cluster node logs.
-
-                cluster.LogLine(logBeginMarker);
-
-                var operation = $"Preparing [{cluster.Definition.Name}] cluster nodes";
-
-                var controller = 
-                    new SetupController<NodeDefinition>(operation, cluster.Nodes)
-                    {
-                        ShowStatus  = !Program.Quiet,
-                        MaxParallel = Program.MaxParallel,
-                        ShowElapsed = true
-                    };
-
-                // Configure the setup controller state.
-
-                controller.Add(KubeSetup.DebugModeProperty, debug);
-
-                if (debug)
-                {
-                    controller.Add(KubeSetup.BaseImageNameProperty, baseImageName);
-                }
-
-                controller.Add(KubeSetup.ClusterProxyProperty, cluster);
-                controller.Add(KubeSetup.ClusterLoginProperty, clusterLogin);
-                controller.Add(KubeSetup.HostingManagerProperty, hostingManager);
-                controller.Add(KubeSetup.HostingEnvironmentProperty, hostingManager.HostingEnvironment);
-
-                // Configure the setup steps.
-
-                controller.AddWaitUntilOnlineStep(timeout: TimeSpan.FromMinutes(15));
-                controller.AddNodeStep("node OS verify", (state, node) => node.VerifyNodeOS());
-                controller.AddNodeStep("node credentials",
-                    (state, node) =>
-                    {
-                        node.ConfigureSshKey(controller);
-                    });
-                controller.AddNodeStep("node prepare",
-                    (state, node) =>
-                    {
-                        node.PrepareNode(controller);
-                    });
-            
-                // Some hosting managers may have to some additional work after the node has
-                // been otherwise prepared.
-
-                hostingManager.AddPostPrepareSteps(controller);
-
-                // Start cluster preparation.
-
-                if (!controller.Run())
-                {
-                    // Write the operation end/failed marker to all cluster node logs.
-
-                    cluster.LogLine(logFailedMarker);
-
-                    Console.Error.WriteLine("*** ERROR: One or more configuration steps failed.");
-                    Program.Exit(1);
-                }
-
-                // Write the operation end marker to all cluster node logs.
-
-                cluster.LogLine(logEndMarker);
             }
-            finally
+
+            // Create and run the cluster prepare controller.
+
+            var controller = KubeSetup.CreateClusterPrepareController(
+                clusterDefinition, 
+                maxParallel:            Program.MaxParallel,
+                packageCacheEndpoints:  packageCacheEndpoints,
+                unredacted:             commandLine.HasOption("--unredacted"),
+                debugMode:              debug,
+                baseImageName:          baseImageName,
+                automate:               automate);
+
+            controller.StatusChangedEvent +=
+                status =>
+                {
+                    status.WriteToConsole();
+                };
+
+            if (controller.Run())
             {
-                hostingManager?.Dispose();
+                Console.WriteLine();
+                Console.WriteLine($" [{clusterDefinition.Name}] cluster is prepared.");
+                Console.WriteLine();
+                Program.Exit(0);
             }
-
-            Console.WriteLine();
+            else
+            {
+                Console.WriteLine();
+                Console.WriteLine(" *** ERROR: One or more configuration steps failed.");
+                Console.WriteLine();
+                Program.Exit(1);
+            }
 
             await Task.CompletedTask;
         }

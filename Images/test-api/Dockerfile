@@ -14,16 +14,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-# ARGUMENTS:
-#
-#   ORGANIZATION    - The Docker Hub organization
-#   CLUSTER_VERSION - The neonKUBE cluster version
 
-ARG         ORGANIZATION
-ARG         BASE_ORGANIZATION
-ARG         CLUSTER_VERSION
-FROM        ${BASE_ORGANIZATION}/aspnet-layer:${CLUSTER_VERSION}
+FROM        mcr.microsoft.com/dotnet/aspnet:3.1
 MAINTAINER  jeff@lilltek.com
 STOPSIGNAL  SIGTERM
 ARG         APPNAME

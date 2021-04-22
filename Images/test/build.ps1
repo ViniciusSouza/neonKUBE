@@ -32,5 +32,4 @@ Log-ImageBuild $registry $tag
 # Pull the source image.
 
 Exec { docker pull alpine:latest }
-
 Exec { docker build -t "${registry}:$tag" --build-arg "VERSION=$version" . }

@@ -70,12 +70,17 @@ namespace Neon.Kube
         /// <summary>
         /// The version of CRI-O container runtime to be installed.
         /// </summary>
-        public const string CrioVersion = "1.18";
+        public const string CrioVersion = "1.21";
 
         /// <summary>
         /// The version of Calico to install.
         /// </summary>
         public const string CalicoVersion = "3.16";
+
+        /// <summary>
+        /// The version of dnsutils to install.
+        /// </summary>
+        public const string DnsUtilsVersion = "1.3";
 
         /// <summary>
         /// The version of HaProxy to install.

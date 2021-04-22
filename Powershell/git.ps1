@@ -17,6 +17,17 @@
 # limitations under the License.
 
 #------------------------------------------------------------------------------
+# IMPORTANT:
+#
+# This file defines GitHub related Powershell functions and is intended for use
+# in GitHub actions and other deployment related scenarios.  This file is intended
+# to be shared/included across multiple GitHub repos and should never include
+# repo-specific code.
+#
+# After modifying this file, you should take care to push any changes to the
+# other repos where this file is present.
+
+#------------------------------------------------------------------------------
 # Returns the current branch for a git repostory.
 
 function GitBranch

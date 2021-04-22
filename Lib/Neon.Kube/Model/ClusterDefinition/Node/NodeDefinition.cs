@@ -266,9 +266,9 @@ namespace Neon.Kube
                 throw new ClusterDefinitionException($"The [{nameof(NodeDefinition)}.{nameof(Name)}={Name}] property is not valid.  [localhost] is reserved.");
             }
 
-            if (Name.StartsWith("neon-", StringComparison.InvariantCultureIgnoreCase))
+            if (Name.StartsWith("neon-", StringComparison.InvariantCultureIgnoreCase) && clusterDefinition.Hosting.Environment != HostingEnvironment.Wsl2)
             {
-                throw new ClusterDefinitionException($"The [{nameof(NodeDefinition)}.{nameof(Name)}={Name}] property is not valid because node names starting with [node-] are reserved.");
+                throw new ClusterDefinitionException($"The [{nameof(NodeDefinition)}.{nameof(Name)}={Name}] property is not valid because node names starting with [neon-] are reserved.");
             }
 
             if (string.IsNullOrEmpty(Role))
@@ -323,9 +323,15 @@ namespace Neon.Kube
                 case HostingEnvironment.HyperV:
                 case HostingEnvironment.HyperVLocal:
                 case HostingEnvironment.XenServer:
+
+                    Vm = Vm ?? new VmNodeOptions();
+                    Vm.Validate(clusterDefinition, this.Name);
+                    break;
+
                 case HostingEnvironment.Wsl2:
 
                     Vm = Vm ?? new VmNodeOptions();
+                    this.Name = Dns.GetHostName();
                     Vm.Validate(clusterDefinition, this.Name);
                     break;
 

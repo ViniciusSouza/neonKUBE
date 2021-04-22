@@ -165,12 +165,7 @@ namespace Neon.Xunit
                 }
             }
 
-            if (networkNames.Count > 0)
-            {
-                result = NeonHelper.ExecuteCapture(NeonHelper.DockerCli, new object[] { "network", "rm", networkNames });
-
-                Covenant.Assert(result.ExitCode == 0, result.ErrorText);
-            }
+            NeonHelper.ExecuteCapture(NeonHelper.DockerCli, new object[] { "network", "rm", networkNames });
         }
 
         //---------------------------------------------------------------------
@@ -293,10 +288,7 @@ namespace Neon.Xunit
             StartApplication();
         }
 
-        /// <summary>
-        /// Releases all associated resources.
-        /// </summary>
-        /// <param name="disposing">Pass <c>true</c> if we're disposing, <c>false</c> if we're finalizing.</param>
+        /// <inheritdoc/>
         protected override void Dispose(bool disposing)
         {
             if (disposing)

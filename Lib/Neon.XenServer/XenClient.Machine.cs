@@ -97,7 +97,7 @@ namespace Neon.XenServer
             /// </summary>
             /// <param name="name">Name for the new virtual machine.</param>
             /// <param name="templateName">Identifies the template.</param>
-            /// <param name="processors">Optionally specifies the number of processors to assign.  This defaults to <b>2</b>.</param>
+            /// <param name="cores">Optionally specifies the number of CPU cores to be assigned.  This defaults to <b>2</b>.</param>
             /// <param name="memoryBytes">Optionally specifies the memory assigned to the machine (overriding the template).</param>
             /// <param name="diskBytes">Optionally specifies the primary disk size (overriding the template).</param>
             /// <param name="snapshot">Optionally specifies that the virtual machine should snapshot the template.  This defaults to <c>false</c>.</param>
@@ -129,7 +129,7 @@ namespace Neon.XenServer
             public XenVirtualMachine Create(
                 string                          name, 
                 string                          templateName, 
-                int                             processors               = 2, 
+                int                             cores                    = 2, 
                 long                            memoryBytes              = 0, 
                 long                            diskBytes                = 0, 
                 bool                            snapshot                 = false,
@@ -138,7 +138,7 @@ namespace Neon.XenServer
                 string                          extraStorageRespository  = "Local storage")
             {
                 Covenant.Requires<ArgumentNullException>(!string.IsNullOrEmpty(templateName), nameof(templateName));
-                Covenant.Requires<ArgumentException>(processors > 0, nameof(processors));
+                Covenant.Requires<ArgumentException>(cores > 0, nameof(cores));
                 Covenant.Requires<ArgumentException>(memoryBytes >= 0, nameof(memoryBytes));
                 Covenant.Requires<ArgumentException>(diskBytes >= 0, nameof(diskBytes));
                 Covenant.Requires<ArgumentNullException>(!string.IsNullOrEmpty(primaryStorageRepository), nameof(primaryStorageRepository));
@@ -195,12 +195,11 @@ namespace Neon.XenServer
                 var vmInstallResponse = client.SafeInvoke("vm-install", $"template={templateName}", $"new-name-label={name}", srUuidArg);
                 var vmUuid            = vmInstallResponse.OutputText.Trim();
 
-                // Configure processors
+                // Configure the processors.
 
-                client.SafeInvoke("vm-param-set",
-                    $"uuid={vmUuid}",
-                    $"VCPUs-at-startup={processors}",
-                    $"VCPUs-max={processors}");
+                client.SafeInvoke("vm-param-set", $"uuid={vmUuid}", $"platform:cores-per-socket=1");
+                client.SafeInvoke("vm-param-set", $"uuid={vmUuid}", $"VCPUs-max={cores}");
+                client.SafeInvoke("vm-param-set", $"uuid={vmUuid}", $"VCPUs-at-startup={cores}");
 
                 // Citrix says that VM autostart is not compatible with HA so we don't
                 // want to enable autostart when HA is enabled.  We'll assume that the
@@ -208,10 +207,10 @@ namespace Neon.XenServer
                 //
                 // If the XenServer host is not HA enabled, we're going to configure
                 // the VM to start automatically when the host machine boots.  We're
-                // going to list the XenServer pool to obtain its UUID and then inspect
+                // going to list the XenServer pools to obtain the UUID and then inspect
                 // its parameters to determine whether HA is enabled.  We're going to
                 // assume that any single XenServer host can only be a member of a
-                // single pool (which makes sense).
+                // single pool.
                 //
                 // Note that the pool list will look like:
                 //
@@ -367,13 +366,20 @@ namespace Neon.XenServer
             /// Shuts down a virtual machine.
             /// </summary>
             /// <param name="virtualMachine">The target virtual machine.</param>
-            /// <param name="force">Optionally forces the virtual machine to shutdown.</param>
+            /// <param name="turnOff">
+            /// <para>
+            /// Optionally just turns the VM off without performing a graceful shutdown first.
+            /// </para>
+            /// <note>
+            /// <b>WARNING!</b> This could result in the loss of unsaved data.
+            /// </note>
+            /// </param>
             /// <exception cref="XenException">Thrown if the operation failed.</exception>
-            public void Shutdown(XenVirtualMachine virtualMachine, bool force = false)
+            public void Shutdown(XenVirtualMachine virtualMachine, bool turnOff = false)
             {
                 Covenant.Requires<ArgumentNullException>(virtualMachine != null, nameof(virtualMachine));
 
-                if (force)
+                if (turnOff)
                 {
                     client.SafeInvoke("vm-shutdown", $"uuid={virtualMachine.Uuid}", "--force");
                 }
@@ -407,14 +413,14 @@ namespace Neon.XenServer
             /// Removes a virtual machine and its drives.
             /// </summary>
             /// <param name="virtualMachine">The target virtual machine.</param>
-            /// <param name="noDriveRemoval">Optionally prevents the VM drives from being removed.</param>
-            public void Remove(XenVirtualMachine virtualMachine, bool noDriveRemoval = false)
+            /// <param name="keepDrives">Optionally retains the VM disks.</param>
+            public void Remove(XenVirtualMachine virtualMachine, bool keepDrives = false)
             {
                 Covenant.Requires<ArgumentNullException>(virtualMachine != null, nameof(virtualMachine));
 
                 client.SafeInvoke("vm-reset-powerstate", $"uuid={virtualMachine.Uuid}", "--force");
 
-                if (noDriveRemoval)
+                if (keepDrives)
                 {
                     client.SafeInvoke("vm-destroy", $"uuid={virtualMachine.Uuid}", "--force");
                 }

@@ -41,8 +41,20 @@ using Renci.SshNet.Common;
 namespace Neon.Kube
 {
     /// <summary>
-    /// Interface describing the hosting environment managers.
+    /// Interface describing neonKUBE hosting manager implementions for different environments..
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <see cref="IHostingManager"/> implementations are used to provision the infrastructure required
+    /// to deploy a neonKUBE cluster to various environments including on-premise via XenServer or
+    /// Hyper-V hypervisors or to public clouds like AWS, Azure, and Google.  This infrastructure
+    /// includes creating or initializing the servers as well as configuring networking in cloud
+    /// environments.
+    /// </para>
+    /// <para>
+    /// This interface also defines the mechanism for deprovisioning a cluster.
+    /// </para>
+    /// </remarks>
     public interface IHostingManager : IDisposable
     {
         /// <summary>
@@ -59,15 +71,18 @@ namespace Neon.Kube
         void Validate(ClusterDefinition clusterDefinition);
 
         /// <summary>
-        /// Returns <c>true</c> if the provisioning operation actually does nothing.
-        /// </summary>
-        bool IsProvisionNOP { get; }
-
-        /// <summary>
         /// Returns <c>true</c> if provisoning requires that the user have
         /// administrator privileges.
         /// </summary>
         bool RequiresAdminPrivileges { get; }
+
+        /// <summary>
+        /// Returns <c>true</c> if the hosting manager requires that the LAN be scanned
+        /// for devices assigned IP addresses that may conflict with node addresses.  This
+        /// is typically required only for clusters deployed on-premise because cloud
+        /// clusters are typically provisioned to their own isolated network.
+        /// </summary>
+        bool RequiresNodeAddressCheck { get; }
 
         /// <summary>
         /// Specifies whether a cryptographically random node password should be generated.
@@ -75,37 +90,24 @@ namespace Neon.Kube
         bool GenerateSecurePassword { get; }
 
         /// <summary>
-        /// Creates and initializes the cluster resources such as the virtual machines,
-        /// networks, load balancers, network security groups, public IP addresses etc.
+        /// Adds the steps required to the setup controller passed that creates and initializes the
+        /// cluster resources such as the virtual machines, networks, load balancers, network security groups, 
+        /// public IP addresses.
         /// </summary>
         /// <param name="controller">The setup controller.</param>
-        /// <param name="secureSshPassword">
-        /// The secure SSH password to be set for all node VMs. This is required.
-        /// </param>
-        /// <param name="orgSshPassword">
-        /// The starting SSH password for the VMs.  This may be passed as <c>null</c> when
-        /// the provisioning manager is able to configure the passwords when the VMs are
-        /// born, such as in the cloud or when hosted via on-premise hypervisors.  This
-        /// is currently used only by the bare metal hosting manager which will need to
-        /// be able to log into existing nodes provisioned manually by the cluster operator.
-        /// </param>
-        /// <returns><c>true</c> on success.</returns>
-        /// <remarks>
-        /// <para>
-        /// For the clusters that return <see cref="CanManageRouter"/>=<c>true</c> (typically
-        /// cloud managers  indicating that they can manage the upstream router or load balancer) 
-        /// this method will leave the public SSH NAT rules in place so that cluster provisioning
-        /// and setup will be able to establish SSH connections to each cluster node.  This is
-        /// equivalent to calling <see cref="EnableInternetSshAsync"/>.
-        /// </para>
-        /// </remarks>
-        Task<bool> ProvisionAsync(ISetupController controller, string secureSshPassword, string orgSshPassword = null);
+        void AddProvisioningSteps(SetupController<NodeDefinition> controller);
 
         /// <summary>
         /// Adds any steps to be performed after the node has been otherwise prepared.
         /// </summary>
-        /// <param name="setupController">The target setup controller.</param>
-        void AddPostPrepareSteps(SetupController<NodeDefinition> setupController);
+        /// <param name="controller">The target setup controller.</param>
+        void AddPostProvisioningSteps(SetupController<NodeDefinition> controller);
+
+        /// <summary>
+        /// Adds the steps required to deprovision a cluster.
+        /// </summary>
+        /// <param name="controller"></param>
+        void AddDeprovisoningSteps(SetupController<NodeDefinition> controller);
 
         /// <summary>
         /// Returns <c>true</c> if the hosting manage is capable of updating the upstream

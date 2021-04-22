@@ -875,7 +875,7 @@ rm {HostFolders.Home(Username)}/askpass
         /// Writes text to the operation log.
         /// </summary>
         /// <param name="text">The text.</param>
-        public void Log(string text)
+        public virtual void Log(string text)
         {
             if (logWriter != null)
             {
@@ -887,7 +887,7 @@ rm {HostFolders.Home(Username)}/askpass
         /// Writes a line of text to the operation log.
         /// </summary>
         /// <param name="text">The text.</param>
-        public void LogLine(string text)
+        public virtual void LogLine(string text)
         {
             if (logWriter != null)
             {
@@ -899,7 +899,7 @@ rm {HostFolders.Home(Username)}/askpass
         /// <summary>
         /// Flushes the log.
         /// </summary>
-        public void LogFlush()
+        public virtual void LogFlush()
         {
             if (logWriter != null)
             {
@@ -966,7 +966,7 @@ rm {HostFolders.Home(Username)}/askpass
             var encryptionName = "aes256-ctr";
 
             foreach (var disabledEncryption in connectionInfo.Encryptions
-                .Where(e => e.Key != encryptionName)
+                .Where(encryption => encryption.Key != encryptionName)
                 .ToList())
             {
                 connectionInfo.Encryptions.Remove(disabledEncryption.Key);
@@ -3359,7 +3359,7 @@ echo $? > {cmdFolder}/exit
         {
             Covenant.Requires<ArgumentNullException>(sbYaml != null, nameof(sbYaml));
 
-            return KubectlApply(sbYaml.ToString());
+            return KubectlApply(sbYaml.ToString(), runOptions);
         }
 
         /// <summary>

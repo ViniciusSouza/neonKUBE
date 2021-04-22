@@ -41,6 +41,7 @@ set NF_CACHE=%NF_ROOT%\Build-cache
 set NF_SNIPPETS=%NF_ROOT%\Snippets
 set NF_TEST=%NF_ROOT%\Test
 set NF_TEMP=C:\Temp
+set NF_ACTIONS_ROOT=%NC_REPOS%\neonCLOUD\Automation\actions
 set NF_CODEDOC=%NF_ROOT%\..\nforgeio.github.io
 set NF_SAMPLES_CADENCE=%NF_ROOT%\..\cadence-samples
 set NEON_SKIPSLOWTESTS=1
@@ -61,6 +62,7 @@ setx NF_CACHE "%NF_CACHE%" /M                                 > nul
 setx NF_SNIPPETS "%NF_SNIPPETS%" /M                           > nul
 setx NF_TEST "%NF_TEST%" /M                                   > nul
 setx NF_TEMP "%NF_TEMP%" /M                                   > nul
+setx NF_ACTIONS_ROOT "%NF_ACTIONS_ROOT%" /M                   > nul
 setx NF_CODEDOC "%NF_CODEDOC%" /M                             > nul
 setx NF_SAMPLES_CADENCE "%NF_SAMPLES_CADENCE%" /M             > nul
 setx NEON_SKIPSLOWTESTS %NEON_SKIPSLOWTESTS% /M               > nul
@@ -95,6 +97,7 @@ REM smart enough to only add directories that actually exist.
 %NF_TOOLBIN%\pathtool -dedup -system -add "%ProgramFiles%\WinSCP"
 %NF_TOOLBIN%\pathtool -dedup -system -add "%ProgramFiles(x86)%\WinSCP"
 %NF_TOOLBIN%\pathtool -dedup -system -add "C:\Go"
+%NF_TOOLBIN%\pathtool -dedup -system -add "C:\Program Files (x86)\HTML Help Workshop"
 
 REM Configure the neonKUBE program folder and add it to the PATH.
 

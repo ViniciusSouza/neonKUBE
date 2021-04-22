@@ -30,9 +30,8 @@ param
 
 Log-ImageBuild $registry $tag
 
-$appname           = "test-api"
-$organization      = LibraryRegistryOrg
-$base_organization = KubeBaseRegistryOrg
+$appname      = "test-api"
+$organization = LibraryRegistryOrg
 
 # Build and publish the app to a local [bin] folder.
 

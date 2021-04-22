@@ -51,6 +51,17 @@ namespace Neon.Deployment
     /// checks can be distracting.  Custom implementation can choose to follow this pattern or
     /// just treat both types of secret the same.
     /// </para>
+    /// <para>
+    /// You can also obtain a specific property from a secret password or value by using this syntax:
+    /// </para>
+    /// <example>
+    /// SECRETNAME[PROPERTY]
+    /// </example>
+    /// <para>
+    /// This is useful for obtaining both the username and password from a login, or all of the different
+    /// properties from a credit card, etc.  This blurs the difference between secret passwords and secret
+    /// values a bit but we're going to retain both concepts anyway.
+    /// </para>
     /// </item>
     /// <item>
     /// <para>
@@ -88,9 +99,10 @@ namespace Neon.Deployment
         /// <param name="name">Specifies the secret name.</param>
         /// <param name="vault">Optionally specifies the 1Password vault.  This defaults to the developer's neonFORGE user name as specified by the <c>NC_USER</c> environment variable.</param>
         /// <param name="masterPassword">Optionally specifies the master 1Password when it is already known.</param>
+        /// <param name="nullOnNotFound">Optionally specifies that <c>null</c> should be returned rather than throwing an exception when the secret does not exist.</param>
         /// <returns>The password value.</returns>
         /// <exception cref="ProfileException">Thrown if the profile server returns an error.</exception>
-        string GetSecretPassword(string name, string vault = null, string masterPassword = null);
+        string GetSecretPassword(string name, string vault = null, string masterPassword = null, bool nullOnNotFound = false);
 
         /// <summary>
         ///  Requests the value of a secret value from 1Password via the assistant.
@@ -98,16 +110,18 @@ namespace Neon.Deployment
         /// <param name="name">Specifies the secret name.</param>
         /// <param name="vault">Optionally specifies the 1Password vault.  This defaults to the developer's neonFORGE user name as specified by the <c>NC_USER</c> environment variable.</param>
         /// <param name="masterPassword">Optionally specifies the master 1Password when it is already known.</param>
+        /// <param name="nullOnNotFound">Optionally specifies that <c>null</c> should be returned rather than throwing an exception when the secret does not exist.</param>
         /// <returns>The password value.</returns>
         /// <exception cref="ProfileException">Thrown if the profile server returns an error.</exception>
-        string GetSecretValue(string name, string vault = null, string masterPassword = null);
+        string GetSecretValue(string name, string vault = null, string masterPassword = null, bool nullOnNotFound = false);
 
         /// <summary>
         /// Requests a profile value from the assistant.
         /// </summary>
         /// <param name="name">Identifies the profile value.</param>
+        /// <param name="nullOnNotFound">Optionally specifies that <c>null</c> should be returned rather than throwing an exception when the profile value does not exist.</param>
         /// <returns>The password value.</returns>
         /// <exception cref="ProfileException">Thrown if the profile server returns an error.</exception>
-        string GetProfileValue(string name);
+        string GetProfileValue(string name, bool nullOnNotFound = false);
     }
 }

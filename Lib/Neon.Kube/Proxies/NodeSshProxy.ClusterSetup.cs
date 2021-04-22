@@ -462,7 +462,7 @@ service ntp restart
             sbHosts.Append(
 $@"
 127.0.0.1	    localhost
-127.0.0.1       kubernetes-masters
+127.0.0.1       kubernetes-masters neon-desktop
 {nodeAddress}{separator}{Name}{separator}{KubeConst.LocalClusterRegistry}
 ::1             localhost ip6-localhost ip6-loopback
 ff02::1         ip6-allnodes
@@ -481,7 +481,7 @@ ff02::2         ip6-allrouters
 
             var nodeDefinition    = NeonHelper.CastTo<NodeDefinition>(Metadata);
             var clusterDefinition = Cluster.Definition;
-            var hostingManager    = controller.Get<IHostingManager>(KubeSetup.HostingManagerProperty);
+            var hostingManager    = controller.Get<IHostingManager>(KubeSetupProperty.HostingManager);
 
             InvokeIdempotent("setup/package-caching",
                 () =>
@@ -598,7 +598,7 @@ EOF
 
             var nodeDefinition    = NeonHelper.CastTo<NodeDefinition>(Metadata);
             var clusterDefinition = Cluster.Definition;
-            var hostingManager    = controller.Get<IHostingManager>(KubeSetup.HostingManagerProperty);
+            var hostingManager    = controller.Get<IHostingManager>(KubeSetupProperty.HostingManager);
 
             InvokeIdempotent("setup/common",
                 () =>
@@ -658,7 +658,7 @@ service kubelet restart
             string                              chartName,
             string                              releaseName  = null,
             string                              @namespace   = "default",
-            List<KeyValuePair<string, object>>  values       = null)
+            Dictionary<string, object>          values       = null)
         {
             Covenant.Requires<ArgumentNullException>(controller != null, nameof(controller));
             Covenant.Requires<ArgumentNullException>(!string.IsNullOrEmpty(chartName), nameof(chartName));

@@ -212,6 +212,162 @@ abc
 
         [Fact]
         [Trait(TestCategory.CategoryTrait, TestCategory.NeonCommon)]
+        public void Comments_CustomMarker()
+        {
+            // Verify that we can handle a custom comment prefix.
+
+            var input =
+@"# This is a comment
+     # This is a comment
+This is a test
+# This is a comment
+of the emergency # not a comment
+broadcasting system
+#
+
+a
+ab
+abc
+
+";
+
+            var expected =
+@"
+
+This is a test
+
+of the emergency # not a comment
+broadcasting system
+
+
+a
+ab
+abc
+
+";
+            using (var reader = new PreprocessReader(input))
+            {
+                reader.ClearCommentMarkers();
+                reader.AddCommentMarker("#");
+
+                var output = reader.ReadToEnd();
+
+                Assert.Equal(expected, output);
+            }
+        }
+
+        [Fact]
+        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCommon)]
+        public void Comments_CustomMarkers()
+        {
+            // Verify that we can handle multiple custom comment prefixes.
+
+            var input =
+@"# This is a comment
+     # This is a comment
+This is a test
+// This is a comment
+of the emergency # not a comment
+broadcasting system
+#
+
+a
+ab
+abc
+
+";
+
+            var expected =
+@"
+
+This is a test
+
+of the emergency # not a comment
+broadcasting system
+
+
+a
+ab
+abc
+
+";
+            using (var reader = new PreprocessReader(input))
+            {
+                reader.ClearCommentMarkers();
+                reader.AddCommentMarker("#");
+                reader.AddCommentMarker("//");
+
+                var output = reader.ReadToEnd();
+
+                Assert.Equal(expected, output);
+            }
+        }
+
+        [Fact]
+        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCommon)]
+        public void Comments_NoCustomMarkers()
+        {
+            // Verify that we can handle no custom comment prefixes.
+
+            var input =
+@"// This is a comment
+     // This is a comment
+This is a test
+// This is a comment
+of the emergency # not a comment
+broadcasting system
+//
+
+a
+ab
+abc
+
+";
+
+            var expected =
+@"// This is a comment
+     // This is a comment
+This is a test
+// This is a comment
+of the emergency # not a comment
+broadcasting system
+//
+
+a
+ab
+abc
+
+";
+            using (var reader = new PreprocessReader(input))
+            {
+                reader.ClearCommentMarkers();
+
+                var output = reader.ReadToEnd();
+
+                Assert.Equal(expected, output);
+            }
+        }
+
+        [Fact]
+        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCommon)]
+        public void Comments_BadMarkers()
+        {
+            // Verify that we validate reasonable markers.
+
+            using (var reader = new PreprocessReader(string.Empty))
+            {
+                Assert.Throws<ArgumentNullException>(() => reader.AddCommentMarker(null));
+                Assert.Throws<ArgumentNullException>(() => reader.AddCommentMarker(string.Empty));
+                Assert.Throws<ArgumentException>(() => reader.AddCommentMarker(" "));       // Whitespace not allowed
+                Assert.Throws<ArgumentException>(() => reader.AddCommentMarker(" //"));     // Whitespace not allowed
+                Assert.Throws<ArgumentException>(() => reader.AddCommentMarker("\t"));      // Whitespace not allowed
+                Assert.Throws<ArgumentException>(() => reader.AddCommentMarker("1"));       // Not punctation
+                Assert.Throws<ArgumentException>(() => reader.AddCommentMarker("a"));       // Not punctation
+            }
+        }
+
+        [Fact]
+        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCommon)]
         public async Task VariablesDefault()
         {
             await VerifyAsync(
@@ -1285,6 +1441,8 @@ line2
                 var source = "TEST = $<<<password:test>>>";
                 var output = new PreprocessReader(source).ReadToEnd().Trim();
 
+                Assert.Equal("TEST = test-password", output);
+
                 source = "TEST = $<<<password:test:vault>>>";
                 output = new PreprocessReader(source).ReadToEnd().Trim();
 
@@ -1295,10 +1453,42 @@ line2
                 //-------------------------------------------------------------
                 // Verify secret values
 
+                source = "TEST = $<<<secret:test>>>";
+                output = new PreprocessReader(source).ReadToEnd().Trim();
+
+                Assert.Equal("TEST = test-secret", output);
+
+                source = "TEST = $<<<secret:test:vault>>>";
+                output = new PreprocessReader(source).ReadToEnd().Trim();
+
+                Assert.Equal("TEST = test-secret-vault", output);
+
+                Assert.Throws<ProfileException>(() => new PreprocessReader("TEST = $<<<secret:missing>>>").ReadToEnd());
+
+                //-------------------------------------------------------------
+                // Verify secret values targeting a specific property.
+
+                source = "TEST = $<<<secret:test[field]>>>";
+                output = new PreprocessReader(source).ReadToEnd().Trim();
+
+                Assert.Equal("TEST = test[field]-secret", output);
+
+                source = "TEST = $<<<secret:test[field]:vault>>>";
+                output = new PreprocessReader(source).ReadToEnd().Trim();
+
+                Assert.Equal("TEST = test[field]-secret-vault", output);
+
+                Assert.Throws<ProfileException>(() => new PreprocessReader("TEST = $<<<secret:missing>>>").ReadToEnd());
+
                 //-------------------------------------------------------------
                 // Verify profile values
 
+                source = "TEST = $<<<profile:test>>>";
+                output = new PreprocessReader(source).ReadToEnd().Trim();
 
+                Assert.Equal("TEST = test-profile", output);
+
+                Assert.Throws<ProfileException>(() => new PreprocessReader("TEST = $<<<profile:missing>>>").ReadToEnd());
             }
             finally
             {

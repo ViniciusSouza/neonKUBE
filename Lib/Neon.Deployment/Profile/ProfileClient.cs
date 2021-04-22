@@ -37,21 +37,34 @@ namespace Neon.Deployment
         private readonly TimeSpan   connectTimeout;
 
         /// <summary>
+        /// <para>
         /// Constructs a profile client with default parameters.  This is suitable for 
         /// constructing from Powershell scripts.
+        /// </para>
+        /// <note>
+        /// <see cref="ProfileClient"/> currently supports only Windows.
+        /// </note>
         /// </summary>
+        /// <exception cref="NotSupportedException">Thrown when not running on Windows.</exception>
         public ProfileClient()
             : this(DeploymentHelper.NeonProfileServicePipe)
         {
         }
 
         /// <summary>
-        /// Constructor.
+        /// <para>
+        /// Constructor with optional client timeout.
+        /// </para>
+        /// <note>
+        /// <see cref="ProfileClient"/> currently supports only Windows.
+        /// </note>
         /// </summary>
         /// <param name="pipeName">Specifies the server pipe name.</param>
         /// <param name="connectTimeout">Optionally specifies the connection timeout.  This defaults to <b>10 seconds</b>.</param>
+        /// <exception cref="NotSupportedException">Thrown when not running on Windows.</exception>
         public ProfileClient(string pipeName, TimeSpan connectTimeout = default)
         {
+            Covenant.Requires<NotSupportedException>(NeonHelper.IsWindows, $"[{nameof(ProfileClient)}] currently only supports Windows.");
             Covenant.Requires<ArgumentNullException>(!string.IsNullOrEmpty(pipeName), nameof(pipeName));
 
             this.pipeName = pipeName;
@@ -74,16 +87,20 @@ namespace Neon.Deployment
         {
             Covenant.Requires<ArgumentNullException>(request != null, nameof(request));
 
+File.AppendAllText(@"C:\Temp\secret.txt", "*** [.net] Call-0");
             using (var pipe = new NamedPipeClientStream(".", pipeName, PipeDirection.InOut))
             {
                 try
                 {
+File.AppendAllText(@"C:\Temp\secret.txt", "*** [.net] Call-1");
                     pipe.Connect((int)connectTimeout.TotalMilliseconds);
+File.AppendAllText(@"C:\Temp\secret.txt", "*** [.net] Call-2");
                 }
                 catch (TimeoutException e)
                 {
-                    throw new ProfileException("Cannot connect to profile server.  Is [neon-assistant] running?", e);
+                    throw new ProfileException("Cannot connect to profile server.  Is [neon-assistant] running?", ProfileStatus.Timeout, e);
                 }
+File.AppendAllText(@"C:\Temp\secret.txt", "*** [.net] Call-3");
 
                 var reader = new StreamReader(pipe);
                 var writer = new StreamWriter(pipe);
@@ -95,24 +112,28 @@ namespace Neon.Deployment
 
                 if (responseLine == null)
                 {
-                    throw new ProfileException("The profile server did not respond.");
+                    throw new ProfileException("The profile server did not respond.", ProfileStatus.Connect);
                 }
 
                 var response = ProfileResponse.Parse(responseLine);
 
+File.AppendAllText(@"C:\Temp\secret.txt", "*** [.net] Call-4");
                 pipe.Close();
+File.AppendAllText(@"C:\Temp\secret.txt", "*** [.net] Call-5");
 
                 if (!response.Success)
                 {
-                    throw new ProfileException(response.Error);
+File.AppendAllText(@"C:\Temp\secret.txt", "*** [.net] Call-6");
+                    throw new ProfileException(response.Error, response.Status);
                 }
 
+File.AppendAllText(@"C:\Temp\secret.txt", "*** [.net] Call-7");
                 return response;
             }
         }
 
         /// <inheritdoc/>
-        public string GetProfileValue(string name)
+        public string GetProfileValue(string name, bool nullOnNotFound = false)
         {
             Covenant.Requires<ArgumentNullException>(!string.IsNullOrEmpty(name), nameof(name));
 
@@ -120,11 +141,23 @@ namespace Neon.Deployment
 
             args.Add("name", name);
 
-            return Call(ProfileRequest.Create("GET-PROFILE-VALUE", args)).Value;
+            try
+            {
+                return Call(ProfileRequest.Create("GET-PROFILE-VALUE", args)).Value;
+            }
+            catch (ProfileException e)
+            {
+                if (nullOnNotFound && e.Status == ProfileStatus.NotFound)
+                {
+                    return null;
+                }
+
+                throw;
+            }
         }
 
         /// <inheritdoc/>
-        public string GetSecretPassword(string name, string vault = null, string masterPassword = null)
+        public string GetSecretPassword(string name, string vault = null, string masterPassword = null, bool nullOnNotFound = false)
         {
             Covenant.Requires<ArgumentNullException>(!string.IsNullOrEmpty(name), nameof(name));
 
@@ -142,13 +175,28 @@ namespace Neon.Deployment
                 args.Add("masterpassword", masterPassword);
             }
 
-            return Call(ProfileRequest.Create("GET-SECRET-PASSWORD", args)).Value;
+            try
+            {
+                return Call(ProfileRequest.Create("GET-SECRET-PASSWORD", args)).Value;
+            }
+            catch (ProfileException e)
+            {
+                if (nullOnNotFound && e.Status == ProfileStatus.NotFound)
+                {
+                    return null;
+                }
+
+                throw;
+            }
         }
 
         /// <inheritdoc/>
-        public string GetSecretValue(string name, string vault = null, string masterPassword = null)
+        public string GetSecretValue(string name, string vault = null, string masterPassword = null, bool nullOnNotFound = false)
         {
             Covenant.Requires<ArgumentNullException>(!string.IsNullOrEmpty(name), nameof(name));
+
+// $debug(jefflill): DELETE THESE
+File.AppendAllText(@"C:\Temp\secret.txt", "*** [.net] GetSecretValue-0");
 
             var args = new Dictionary<string, string>();
 
@@ -164,7 +212,20 @@ namespace Neon.Deployment
                 args.Add("masterpassword", masterPassword);
             }
 
-            return Call(ProfileRequest.Create("GET-SECRET-VALUE", args)).Value;
+            try
+            {
+File.AppendAllText(@"C:\Temp\secret.txt", "*** [.net] GetSecretValue-1");
+                return Call(ProfileRequest.Create("GET-SECRET-VALUE", args)).Value;
+            }
+            catch (ProfileException e)
+            {
+                if (nullOnNotFound && e.Status == ProfileStatus.NotFound)
+                {
+                    return null;
+                }
+
+                throw;
+            }
         }
     }
 }

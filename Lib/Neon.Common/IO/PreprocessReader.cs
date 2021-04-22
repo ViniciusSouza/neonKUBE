@@ -46,13 +46,18 @@ namespace Neon.IO
     /// The processor removes comment lines from the text returned.  A comment line 
     /// starts with zero or more whitespace characters followed by "<b>//</b>".
     /// </para>
+    /// <note>
+    /// Comment lines are indicated by a "<b>//</b>" prefix by default but this can
+    /// be modified via <see cref="ClearCommentMarkers()"/> and <see cref="AddCommentMarker(string)"/>.
+    /// </note>
     /// <para>
     /// The processor implements simple macro definition and conditional statements.
     /// These statements are identifying by a line with the pound sign (<b>#</b>) as
     /// the first non-whitespace character.
     /// </para>
     /// <note>
-    /// The processor statement character can be changed by setting <see cref="StatementMarker"/>.
+    /// The processor statement character defaults to the pound sign (<b>#</b>) but
+    /// can be changed by setting <see cref="StatementMarker"/>.
     /// </note>
     /// <para>
     /// The following processing statements are supported:
@@ -204,6 +209,15 @@ namespace Neon.IO
     ///     to secrets in <i>vaults</i>.  You'll need the password name and optionally, its location when
     ///     referencing a password value.
     ///     </para>
+    ///     <para>
+    ///     You may also request a specific secret property using an array syntax like:
+    ///     </para>
+    ///     <example>
+    ///     SECRETNAME[PROPERTY]
+    ///     </example>
+    ///     <para>
+    ///     Doing this overrides the default <b>password</b> property.
+    ///     </para>
     ///     </description>
     /// </item>
     /// <item>
@@ -218,6 +232,15 @@ namespace Neon.IO
     ///     Secret values are named by a string and are often persisted to a named location.  1Password stores
     ///     to secrets in <i>vaults</i>.  You'll need the value name and optionally, its location when
     ///     referencing a password value.
+    ///     </para>
+    ///     <para>
+    ///     You may also request a specific secret property using an array syntax like:
+    ///     </para>
+    ///     <example>
+    ///     SECRETNAME[PROPERTY]
+    ///     </example>
+    ///     <para>
+    ///     Doing this overrides the default <b>value</b> property.
     ///     </para>
     ///     </description>
     /// </item>
@@ -238,7 +261,7 @@ namespace Neon.IO
     /// </item>
     /// </list>
     /// <para>
-    /// Secrets and profile values can be referenced by as as <b>$&lt;$lt;&lt;type:name[:source]&gt;&gt;&gt;</b>
+    /// Secrets and profile values can be referenced via <b>$&lt;$lt;&lt;type:name[:source]&gt;&gt;&gt;</b>
     /// where <b>type</b> is one of <b>password</b>, <b>secret</b> (value), or <b>profile</b> and <b>name</b>
     /// identifies the secret or profile value and <b>source</b> optionall specifies the secret source
     /// (this is ignored for profile values).
@@ -248,6 +271,8 @@ namespace Neon.IO
     /// $&lt;$&lt;$&lt;password:my-password&gt;&gt;&gt;             # password from default source
     /// $&lt;$&lt;$&lt;secret:my-secret;my-vault&gt;&gt;&gt;        # secret from specific source
     /// $&lt;$&lt;$&lt;secret:my-secret&gt;&gt;&gt;                 # secret from default source
+    /// $&lt;$&lt;$&lt;secret:my-secret[username]&gt;&gt;&gt;       # retrieve [username] from secret
+    /// $&lt;$&lt;$&lt;secret:my-secret[password]&gt;&gt;&gt;       # retrieve [password] from secret
     /// $&lt;$&lt;$&lt;profile:my-profile&gt;&gt;&gt;               # profile value
     /// </code>
     /// <para>
@@ -298,7 +323,7 @@ namespace Neon.IO
         /// You can set the <see cref="VariableExpansionRegex"/> property to this value to change the
         /// <see cref="PreprocessReader"/> behavior.
         /// </summary>
-        public static Regex AngleVariableExpansionRegex { get; private set; } = new Regex(@"\$<(?<name><{0,2}[a-z0-9_:\.\-]+>{0,2})>", regexIgnoreCaseOptions);
+        public static Regex AngleVariableExpansionRegex { get; private set; } = new Regex(@"\$<(?<name><{0,2}[a-z0-9_:\.\-\[\]]+>{0,2})>", regexIgnoreCaseOptions);
 
         /// <summary>
         /// A variable expansion <see cref="Regex"/> that matches normal variables like <b>${test}</b>, environment 
@@ -306,7 +331,7 @@ namespace Neon.IO
         /// You can set the <see cref="VariableExpansionRegex"/> property to this value to change the
         /// <see cref="PreprocessReader"/> behavior.
         /// </summary>
-        public static Regex CurlyVariableExpansionRegex { get; private set; } = new Regex(@"\$\{(?<name>\{{0,2}[a-z0-9_:\.\-]+\}{0,2})\}", regexIgnoreCaseOptions);
+        public static Regex CurlyVariableExpansionRegex { get; private set; } = new Regex(@"\$\{(?<name>\{{0,2}[a-z0-9_:\.\-\[\]]+\}{0,2})\}", regexIgnoreCaseOptions);
 
         /// <summary>
         /// A variable expansion <see cref="Regex"/> that matches normal variables like <b>${test}</b>, environment 
@@ -314,7 +339,7 @@ namespace Neon.IO
         /// You can set the <see cref="VariableExpansionRegex"/> property to this value to change the
         /// <see cref="PreprocessReader"/> behavior.
         /// </summary>
-        public static Regex ParenVariableExpansionRegex { get; private set; } = new Regex(@"\$\((?<name>\({0,2}[a-z0-9_:\.\-]+\){0,2})\)", regexIgnoreCaseOptions);
+        public static Regex ParenVariableExpansionRegex { get; private set; } = new Regex(@"\$\((?<name>\({0,2}[a-z0-9_:\.\-\[\]]+\){0,2})\)", regexIgnoreCaseOptions);
 
         /// <summary>
         /// The default variable expansion <see cref="Regex"/> that matches normal variables like <b>$&lt;test&gt;</b>, environment
@@ -336,6 +361,7 @@ namespace Neon.IO
         private IProfileClient              profileClient          = NeonHelper.ServiceContainer.GetService<IProfileClient>();
         private Dictionary<string, string>  variables              = new Dictionary<string, string>();
         private Regex                       variableExpansionRegex = DefaultVariableExpansionRegex;
+        private List<string>                commentMarkers         = new List<string>() { "//" };
         private string                      indent                 = string.Empty;
         private int                         tabStop                = 0;
         private Stack<State>                stateStack;
@@ -418,6 +444,45 @@ namespace Neon.IO
         /// This defaults to the pound sign (<b>#</b>).
         /// </summary>
         public char StatementMarker { get; set; } = '#';
+
+        /// <summary>
+        /// Clears any comment markers, effectively disabling comment stripping.
+        /// </summary>
+        public void ClearCommentMarkers()
+        {
+            commentMarkers.Clear();
+        }
+
+        /// <summary>
+        /// Appends a comment marker prefix.  This must be a non-empty string including only
+        /// non-whitespace punctuation characters.
+        /// </summary>
+        /// <param name="marker">The comment prefix.</param>
+        public void AddCommentMarker(string marker)
+        {
+            Covenant.Requires<ArgumentNullException>(!string.IsNullOrEmpty(marker), nameof(marker));
+            Covenant.Requires<ArgumentException>(!marker.Any(ch => char.IsWhiteSpace(ch)), nameof(marker), $"[marker={marker}]: cannot include whitespace.");
+            Covenant.Requires<ArgumentException>(!marker.Any(ch => !char.IsPunctuation(ch)), nameof(marker), $"[marker={marker}]: includes a non-punctuation character.");
+
+            // Add the marker if it's not already present.
+
+            if (!commentMarkers.Exists(m => m == marker))
+            {
+                commentMarkers.Add(marker);
+            }
+        }
+
+        /// <summary>
+        /// Configures the reader for parsing YAML by setting the <see cref="StatementMarker"/> to <b>"@"</b>
+        /// and the comment marker to <b>"#"</b>.
+        /// </summary>
+        public void SetYamlMode()
+        {
+            StatementMarker = '@';
+            
+            ClearCommentMarkers();
+            AddCommentMarker("#");
+        }
 
         /// <summary>
         /// The <see cref="Regex"/> used to match variable expansions.  This defaults
@@ -776,27 +841,17 @@ namespace Neon.IO
         /// <returns><b>true</b> if the line is a comment.</returns>
         private bool IsComment(string line)
         {
-            int i;
+            line = line.TrimStart();
 
-            if (line.Length < 2)
+            foreach (var marker in commentMarkers)
             {
-                return false;
-            }
-
-            for (i = 0; i < line.Length; i++)
-            {
-                if (!char.IsWhiteSpace(line[i]))
+                if (line.StartsWith(marker))
                 {
-                    break;
+                    return true;
                 }
             }
 
-            if (i > line.Length - 2 || line[i] != '/' || line[i + 1] != '/')
-            {
-                return false;
-            }
-
-            return true;
+            return false;
         }
 
         /// <summary>
@@ -850,7 +905,7 @@ namespace Neon.IO
 
                     if (fields.Length < 2)
                     {
-                        throw new ProfileException($"[{name}] is not a valid profile reference.  Both [type] and [name] are required.");
+                        throw new ProfileException($"[{name}] is not a valid profile reference.  Both [type] and [name] are required.", ProfileStatus.BadReference);
                     }
 
                     switch (fields[0].ToLower())
@@ -859,7 +914,7 @@ namespace Neon.IO
 
                             if (profileClient == null)
                             {
-                                throw new ProfileException($"Cannot lookup the secret password [{name}] because no [{nameof(IProfileClient)}] implementation is available.");
+                                throw new ProfileException($"Cannot lookup the secret password [{name}] because no [{nameof(IProfileClient)}] implementation is available.", ProfileStatus.BadReference);
                             }
 
                             value = profileClient.GetSecretPassword(fields[1], fields.Length >= 3 ? fields[2] : null);
@@ -869,7 +924,7 @@ namespace Neon.IO
 
                             if (profileClient == null)
                             {
-                                throw new ProfileException($"Cannot lookup the secret value [{name}] because no [{nameof(IProfileClient)}] implementation is available.");
+                                throw new ProfileException($"Cannot lookup the secret value [{name}] because no [{nameof(IProfileClient)}] implementation is available.", ProfileStatus.BadReference);
                             }
 
                             value = profileClient.GetSecretValue(fields[1], fields.Length >= 3 ? fields[2] : null);
@@ -879,7 +934,7 @@ namespace Neon.IO
 
                             if (profileClient == null)
                             {
-                                throw new ProfileException($"Cannot lookup the profile value [{name}] because no [{nameof(IProfileClient)}] implementation is available.");
+                                throw new ProfileException($"Cannot lookup the profile value [{name}] because no [{nameof(IProfileClient)}] implementation is available.", ProfileStatus.BadReference);
                             }
 
                             value = profileClient.GetProfileValue(fields[1]);
@@ -887,7 +942,7 @@ namespace Neon.IO
 
                         default:
 
-                            throw new ProfileException($"[{fields[0]}] is not a valid profile type.  Only [password], [secret], and [profile] are supported.");
+                            throw new ProfileException($"[{fields[0]}] is not a valid profile type.  Only [password], [secret], and [profile] are supported.", ProfileStatus.BadReference);
                     }
                 }
                 else if (name.StartsWith("<") && name.EndsWith(">") ||
