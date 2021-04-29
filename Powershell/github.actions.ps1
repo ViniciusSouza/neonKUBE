@@ -22,7 +22,7 @@
 #
 # ARGUMENTS:
 #
-#   value   - the value being escaped
+#   value   - the string value being escaped
 #
 # RETURNS:
 #
@@ -30,10 +30,10 @@
 
 function Escape-ActionString
 {
-[CmdletBinding()]
+    [CmdletBinding()]
     param (
-        [Parameter(Position=0, Mandatory=1)]
-        [string]$value
+        [Parameter(Position=0, Mandatory=$false)]
+        [string]$value = $null
     )
 
     if ($value -eq $null)
@@ -42,15 +42,15 @@ function Escape-ActionString
     }
 
     $value = $value.Replace("%", "%25")     # We need to escape "%" too
-    $value = $value.Replace("\r", "%0D")
-    $value = $value.Replace("\n", "%0A")
+    $value = $value.Replace("`r", "%0D")
+    $value = $value.Replace("`n", "%0A")
 
     return $value
 }
 
 #------------------------------------------------------------------------------
 # Writes a line of text (encoded as UTF-8) to the action output.  Use this instead
-# of [Write-Output] because Powershell doesn't default to UTF-8 and it's support
+# of [Write-Output] because Powershell doesn't default to UTF-8 and its support
 # for configuring the output encoding appears to be buggy.
 #
 # ARGUMENTS:
@@ -60,10 +60,11 @@ function Escape-ActionString
 
 function Write-ActionOutput
 {
+    [CmdletBinding()]
     param (
-        [Parameter(Position=0, Mandatory=0)]
+        [Parameter(Position=0, Mandatory=$false)]
         [string]$text = $null,
-        [Parameter(Position=2, Mandatory=0)]
+        [Parameter(Position=1, Mandatory=$false)]
         [string]$color = $null
     )
 
@@ -71,6 +72,8 @@ function Write-ActionOutput
     {
         $text = ""
     }
+
+    $text = Escape-ActionString $text
 
     if (![System.String]::IsNullOrEmpty($text))
     {
@@ -111,24 +114,22 @@ function Write-ActionOutput
 # ARGUMENTS:
 #
 #   name    - the action output name
-#   value   - the value to be set ($null will set empty string)
+#   value   - the value to be set (cannot be $null or empty)
 
 function Set-ActionOutput
 {
     [CmdletBinding()]
     param (
-        [Parameter(Position=0, Mandatory=1)]
+        [Parameter(Position=0, Mandatory=$true)]
         [string]$name,
-        [Parameter(Position=1, Mandatory=1)]
-        [string]$value
+        [Parameter(Position=1, Mandatory=$false)]
+        [string]$value = $null
     )
 
     if ([System.String]::IsNullOrEmpty($name))
     {
         throw "[$name] cannot be null or empty."
     }
-
-    $value = Escape-ActionString $value
 
     Write-ActionOutput "::set-output name=$name::$value"
 }
@@ -149,53 +150,47 @@ function Log-ActionDebugMessage
 {
     [CmdletBinding()]
     param (
-        [Parameter(Position=0, Mandatory=1)]
+        [Parameter(Position=0, Mandatory=$true)]
         [string]$message
     )
-
-    $message = Escape-ActionString $message
 
     Write-ActionOutput "::debug::$message"
 }
 
 #------------------------------------------------------------------------------
-# Logs a warning message.
+# Writes a warning message to the action output.
 #
 # ARGUMENTS:
 #
 #   message     - the message
 
-function Log-ActionWarningMessage
+function Write-ActionWarning
 {
     [CmdletBinding()]
     param (
-        [Parameter(Position=0, Mandatory=1)]
+        [Parameter(Position=0, Mandatory=$true)]
         [string]$message
     )
 
-    $message = Escape-ActionString $message
-
-    Write-ActionOutput "::warning::$message"
+    Write-ActionOutput $message "yellow"
 }
 
 #------------------------------------------------------------------------------
-# Logs an error message.
+# Writes an error message to the action output.
 #
 # ARGUMENTS:
 #
 #   message     - the message
 
-function Log-ActionErrorMessage
+function Write-ActionError
 {
     [CmdletBinding()]
     param (
-        [Parameter(Position=0, Mandatory=1)]
+        [Parameter(Position=0, Mandatory=$true)]
         [string]$message
     )
 
-    $message = Escape-ActionString $message
-
-    Write-ActionOutput "::error::$message"
+    Write-ActionOutput $message "red"
 }
 
 #------------------------------------------------------------------------------
@@ -209,7 +204,7 @@ function Open-ActionOutputGroup
 {
     [CmdletBinding()]
     param (
-        [Parameter(Position=0, Mandatory=1)]
+        [Parameter(Position=0, Mandatory=$true)]
         [string]$groupTitle
     )
 
@@ -225,18 +220,42 @@ function Close-ActionOutputGroup
 }
 
 #------------------------------------------------------------------------------
+# Writes information about a Powershell action exception to the action output.
+#
+# ARGUMENTS:
+#
+#   error   - The error caught in a catch block via the automatic
+#             [$_] or [$PSItem] variable
+
+function Write-ActionException
+{
+    [CmdletBinding()]
+    param (
+        [Parameter(Position=0, Mandatory=$true)]
+        $error
+    )
+
+    Write-ActionError "EXCEPTION: $error"
+    Write-ActionError "-------------------------------------------"
+    Write-ActionError $error.ScriptStackTrace
+}
+
+#------------------------------------------------------------------------------
 # Writes the contents of a text file to the action output, optionally nested
 # within an action group.
 #
 # ARGUMENTS:
 #
-#   path        - path to the text file
-#   groupTitle  - optionally specifies the group title
-#   colorMode   - optionally parses to the text file lines and attempts to
-#                 color them when it makes sense.  Pass one of these values:
+#   path                - path to the text file
+#   groupTitle          - optionally specifies the group title
+#   type                - optionally specifies the log file type fgor colorization.
+#                         Pass one of these values:
 #
-#                     "none" or ""  - disables colorization
-#                     "build-log"   - parses build logs
+#                           "none" or ""  - disables colorization
+#                           "build-log"   - parses build logs
+#
+#   keepSHFBWarnings    - optionally strips out Sandcastle Help File Builder (SHFB) 
+#                         warnings when identified
 #
 # REMARKS:
 #
@@ -246,12 +265,14 @@ function Write-ActionOutputFile
 {
     [CmdletBinding()]
     param (
-        [Parameter(Position=0, Mandatory=1)]
+        [Parameter(Position=0, Mandatory=$true)]
         [string]$path,
-        [Parameter(Position=1, Mandatory=0)]
+        [Parameter(Position=1, Mandatory=$false)]
         [string]$groupTitle = $null,
-        [Parameter(Position=2, Mandatory=0)]
-        [string]$colorMode = $null
+        [Parameter(Position=2, Mandatory=$false)]
+        [string]$type = $null,
+        [Parameter(Position=3, Mandatory=$false)]
+        [bool]$keepShfbWarnings = $false
     )
 
     if (![System.IO.File]::Exists($path))
@@ -266,17 +287,20 @@ function Write-ActionOutputFile
         Open-ActionOutputGroup $groupTitle
     }
 
+    # Build log error and warning regular expressions:
+
     $buildLogWarningRegex       = New-Object "System.Text.RegularExpressions.Regex" -ArgumentList "\(\d+,\d+.*\)\:\swarning\s"
-    $buildLogErrorRegex         = New-Object "System.Text.RegularExpressions.Regex" -ArgumentList "\(\d+,\d+.*\)\:\serrors\s"
-    $buildLogWarningummaryRegex = New-Object "System.Text.RegularExpressions.Regex" -ArgumentList "^\s\s\s\s\d+[1-9] Warning\(s\}"
-    $buildLogErrorSummaryRegex  = New-Object "System.Text.RegularExpressions.Regex" -ArgumentList "^\s\s\s\s\d+[1-9] Error\(s\}"
+    $buildLogErrorRegex         = New-Object "System.Text.RegularExpressions.Regex" -ArgumentList "\(\d+,\d+.*\)\:\serror\s"
+    $buildLogWarningummaryRegex = New-Object "System.Text.RegularExpressions.Regex" -ArgumentList "^\s\s\s\s\d+[1-9] Warning\(s\)"
+    $buildLogErrorSummaryRegex  = New-Object "System.Text.RegularExpressions.Regex" -ArgumentList "^\s\s\s\s\d+[1-9] Error\(s\)"
     $buildLogSHFBErrorRegex     = New-Object "System.Text.RegularExpressions.Regex" -ArgumentList "^\s*SHFB\s\:\serror"
+    $buildLogSHFBWarningRegex   = New-Object "System.Text.RegularExpressions.Regex" -ArgumentList "^\s*SHFB\s\:\swarning"
 
     ForEach ($line in $lines)
     {
         $color = $null
 
-        Switch ($colorMode)
+        Switch ($type)
         {
             $null
             {
@@ -296,6 +320,15 @@ function Write-ActionOutputFile
                 {
                     $color = "yellow"
                 }
+                elseif ($buildLogSHFBWarningRegex.IsMatch($line))
+                {
+                    if (!$keepSHFBWarnings)
+                    {
+                        return
+                    }
+
+                    $color = "yellow"
+                }
                 elseif ($buildLogErrorRegex.IsMatch($line) -or $buildLogErrorSummaryRegex.IsMatch($line) -or $buildLogSHFBErrorRegex.IsMatch($line))
                 {
                     $color = "red"
@@ -308,7 +341,7 @@ function Write-ActionOutputFile
 
             default
             {
-                throw "[$colorMode] is not a valid color mode."
+                throw "[$type] is not a supported log file type."
             }
         }
 
@@ -337,15 +370,15 @@ function Set-ActionEnvironmentVariable
 {
     [CmdletBinding()]
     param (
-        [Parameter(Position=0, Mandatory=1)]
+        [Parameter(Position=0, Mandatory=$true)]
         [string]$name,
-        [Parameter(Position=1, Mandatory=1)]
+        [Parameter(Position=1, Mandatory=$true)]
         [string]$value
     )
 
     if ([System.String]::IsNullOrEmpty($name))
     {
-        throw "[$name] cannot be null or empty."
+        throw "[name] cannot be null or empty."
     }
 
     if ($value -eq $null)
@@ -359,13 +392,19 @@ function Set-ActionEnvironmentVariable
 
         $delimiter = "f06bca88-47d6-4971-b1dc-bec88fa4faac"
 
-        Write-ActionOutput "$name<<$delimiter"
-        Write-ActionOutput $value
-        Write-ActionOutput $delimiter
+        [System.IO.File]::AppendAllText($env:GITHUB_ENV,  "$name<<$delimiter`r`n")
+        [System.IO.File]::AppendAllText($env:GITHUB_ENV,  "$value")
+
+        if (!$value.EndsWith("`n"))
+        {
+            [System.IO.File]::AppendAllText($env:GITHUB_ENV,  "`r`n")
+        }
+
+        [System.IO.File]::AppendAllText($env:GITHUB_ENV,  "$delimiter`r`n")
     }
     else
     {
-        Write-ActionOutput "$name=$value"
+        [System.IO.File]::AppendAllText($env:GITHUB_ENV, "$name=$value`r`n")
     }
 }
 
@@ -384,17 +423,51 @@ function Add-ActionPath
 {
     [CmdletBinding()]
     param (
-        [Parameter(Position=0, Mandatory=1)]
+        [Parameter(Position=0, Mandatory=$true)]
         [string]$path
     )
 
     if ([System.String]::IsNullOrEmpty($path))
     {
-        throw "[$path] cannot be null or empty."
+        throw "[path] cannot be null or empty."
     }
 
     if (![System.IO.Directory]::DirectoryExists($path))
     {
         throw "[$path] directory does not exist."
     }
+}
+
+#------------------------------------------------------------------------------
+# Retrieves an action input value.
+#
+# ARGUMENTS:
+#
+#   name        - the value name.
+#   required    - optionally indicates that the value is required
+
+function Get-ActionInput
+{
+    [CmdletBinding()]
+    param (
+        [Parameter(Position=0, Mandatory=$true)]
+        [string]$name,
+        [Parameter(Position=1, Mandatory=$false)]
+        [bool]$required = $false
+    )
+
+    if ([System.String]::IsNullOrEmpty($name))
+    {
+        throw "[name] cannot be null or empty."
+    }
+
+    $name  = "INPUT_$name"
+    $value = [System.Environment]::GetEnvironmentVariable($name)
+
+    if ($required -and [System.String]::IsNullOrEmpty($value))
+    {
+        throw "[$name] input is required."
+    }
+
+    return $value
 }

@@ -82,7 +82,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_WithNoResult()
         {
             await SyncContext.ClearAsync;
@@ -126,7 +126,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public void Workflow_GetWorkflowTypeName()
         {
             // Verify that [CadenceHelper.GetWorkflowTypeName()] works correctly
@@ -144,7 +144,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_WithResult()
         {
             await SyncContext.ClearAsync;
@@ -158,7 +158,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_WithMemos()
         {
             await SyncContext.ClearAsync;
@@ -200,7 +200,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_Logger()
         {
             await SyncContext.ClearAsync;
@@ -239,7 +239,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_UtcNow()
         {
             await SyncContext.ClearAsync;
@@ -281,7 +281,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_Sleep()
         {
             await SyncContext.ClearAsync;
@@ -315,7 +315,8 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
+        [Trait(TestTraits.Unreliable, "true")]      // https://github.com/nforgeio/neonKUBE/issues/1166
         public async Task Workflow_SleepUntilUtc()
         {
             await SyncContext.ClearAsync;
@@ -366,7 +367,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_StubExecTwice()
         {
             await SyncContext.ClearAsync;
@@ -407,7 +408,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_MultiEntrypoints()
         {
             await SyncContext.ClearAsync;
@@ -442,7 +443,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_MultipleStubs()
         {
             await SyncContext.ClearAsync;
@@ -515,12 +516,13 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
+        [Trait(TestTraits.Slow, "true")]
         public async Task Workflow_Cron()
         {
             var assembly = Assembly.GetExecutingAssembly();
 
-            // Start a CRON workflow on a 1 minute interval that updates the [cronCalls] list 
+            // Start a CRON workflow on a 1 minute interval that updates the [cronCallist 
             // every time the workflow is invoked.  We'll wait for the first invocation and then
             // wait to verify that we've see at least 3 invocations and that each invocation 
             // propertly incremented the call number.
@@ -644,7 +646,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_NextRandomDouble()
         {
             await SyncContext.ClearAsync;
@@ -705,7 +707,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_NextRandomInt()
         {
             await SyncContext.ClearAsync;
@@ -760,7 +762,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_NextRandomInt_Max()
         {
             await SyncContext.ClearAsync;
@@ -821,7 +823,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_NextRandomInt_MinMax()
         {
             await SyncContext.ClearAsync;
@@ -915,7 +917,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_NextRandomBytes()
         {
             await SyncContext.ClearAsync;
@@ -999,7 +1001,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_Echo()
         {
             await SyncContext.ClearAsync;
@@ -1051,7 +1053,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_SideEffect()
         {
             await SyncContext.ClearAsync;
@@ -1093,7 +1095,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_MutableSideEffect()
         {
             await SyncContext.ClearAsync;
@@ -1168,7 +1170,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_SignalOnce()
         {
             await SyncContext.ClearAsync;
@@ -1186,7 +1188,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_SignalTwice()
         {
             await SyncContext.ClearAsync;
@@ -1208,7 +1210,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_SignalBeforeStart()
         {
             await SyncContext.ClearAsync;
@@ -1302,7 +1304,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_QueryOnce()
         {
             await SyncContext.ClearAsync;
@@ -1318,7 +1320,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_QueryTwice()
         {
             await SyncContext.ClearAsync;
@@ -1340,7 +1342,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_QueryNoResult()
         {
             await SyncContext.ClearAsync;
@@ -1359,7 +1361,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_QueryBeforeStart()
         {
             await SyncContext.ClearAsync;
@@ -1392,7 +1394,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_GetVersion()
         {
             await SyncContext.ClearAsync;
@@ -1537,7 +1539,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_Complex()
         {
             await SyncContext.ClearAsync;
@@ -1961,7 +1963,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_Child()
         {
             await SyncContext.ClearAsync;
@@ -1977,7 +1979,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_ChildHello()
         {
             await SyncContext.ClearAsync;
@@ -2001,7 +2003,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_FutureChild_NoArgsOrResult ()
         {
             await SyncContext.ClearAsync;
@@ -2021,7 +2023,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_FutureChild_ArgsAndResult()
         {
             await SyncContext.ClearAsync;
@@ -2037,7 +2039,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_ChildActivity()
         {
             await SyncContext.ClearAsync;
@@ -2053,7 +2055,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_ChildSignal()
         {
             await SyncContext.ClearAsync;
@@ -2071,7 +2073,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_ChildQuery()
         {
             await SyncContext.ClearAsync;
@@ -2087,7 +2089,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_ChildNested()
         {
             await SyncContext.ClearAsync;
@@ -2103,7 +2105,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_FutureActivity_NoArgsResult()
         {
             await SyncContext.ClearAsync;
@@ -2117,7 +2119,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_FutureLocalActivity_NoArgsResult()
         {
             await SyncContext.ClearAsync;
@@ -2131,7 +2133,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_FutureActivity_ArgsResult()
         {
             await SyncContext.ClearAsync;
@@ -2145,7 +2147,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_FutureLocalActivity_ArgsResult()
         {
             await SyncContext.ClearAsync;
@@ -2159,7 +2161,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_ParallelActivity()
         {
             await SyncContext.ClearAsync;
@@ -2172,7 +2174,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_ParallelLocalActivity()
         {
             await SyncContext.ClearAsync;
@@ -2261,7 +2263,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_Parallel()
         {
             await SyncContext.ClearAsync;
@@ -2296,7 +2298,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_DifferentNames()
         {
             await SyncContext.ClearAsync;
@@ -2332,7 +2334,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_WithError()
         {
             await SyncContext.ClearAsync;
@@ -2372,7 +2374,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_Unregistered()
         {
             await SyncContext.ClearAsync;
@@ -2416,7 +2418,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_ComplexData()
         {
             await SyncContext.ClearAsync;
@@ -2497,7 +2499,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_Info()
         {
             await SyncContext.ClearAsync;
@@ -2629,7 +2631,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_ContinueAsNew()
         {
             await SyncContext.ClearAsync;
@@ -2643,7 +2645,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_ContinueAsNew_Options()
         {
             await SyncContext.ClearAsync;
@@ -2663,7 +2665,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_ContinueAsNew_Stub()
         {
             await SyncContext.ClearAsync;
@@ -2677,7 +2679,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_ContinueAsNew_StubOptions()
         {
             await SyncContext.ClearAsync;
@@ -2847,7 +2849,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_ExternalWorkflowStub_ById_NoResult()
         {
             await SyncContext.ClearAsync;
@@ -2862,7 +2864,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_ExternalWorkflowStub_ById_WithResult()
         {
             await SyncContext.ClearAsync;
@@ -2877,7 +2879,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_ExternalWorkflowStub_ByExecution_NoResult()
         {
             await SyncContext.ClearAsync;
@@ -2892,7 +2894,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_ExternalWorkflowStub_ByExecution_WithResult()
         {
             await SyncContext.ClearAsync;
@@ -2907,7 +2909,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_ExternalWaitForLongTime()
         {
             await SyncContext.ClearAsync;
@@ -3083,7 +3085,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_ChildGetExecution()
         {
             await SyncContext.ClearAsync;
@@ -3099,7 +3101,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_ToUntyped()
         {
             await SyncContext.ClearAsync;
@@ -3128,7 +3130,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_FutureChild_WithResult()
         {
             await SyncContext.ClearAsync;
@@ -3143,7 +3145,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_Future_WithResult()
         {
             await SyncContext.ClearAsync;
@@ -3157,7 +3159,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_Future_WithoutResult()
         {
             await SyncContext.ClearAsync;
@@ -3298,7 +3300,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_ExternalIdNoReuse()
         {
             await SyncContext.ClearAsync;
@@ -3327,7 +3329,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_ExternalIdReuseViaOptions()
         {
             await SyncContext.ClearAsync;
@@ -3355,7 +3357,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_ExternalIdReuseViaAttribute()
         {
             await SyncContext.ClearAsync;
@@ -3383,7 +3385,7 @@ namespace TestCadence
         }
         
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_ChildIdNoReuse()
         {
             await SyncContext.ClearAsync;
@@ -3396,7 +3398,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_ChildIdReuseViaOptions()
         {
             await SyncContext.ClearAsync;
@@ -3409,7 +3411,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_ChildIdReuseViaAttribute()
         {
             // Verify that we can have Cadence use duplicate child workflow IDs.
@@ -3547,7 +3549,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_UntypedChildFuture_WithNoResult()
         {
             await SyncContext.ClearAsync;
@@ -3561,7 +3563,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_UntypedChildFuture_WithResult()
         {
             await SyncContext.ClearAsync;
@@ -3939,7 +3941,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_Queue_Single()
         {
             await SyncContext.ClearAsync;
@@ -3953,7 +3955,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_Queue_Multiple()
         {
             await SyncContext.ClearAsync;
@@ -3968,7 +3970,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_Queue_Multiple_200()
         {
             await SyncContext.ClearAsync;
@@ -3983,7 +3985,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_Queue_Timeout()
         {
             await SyncContext.ClearAsync;
@@ -3996,7 +3998,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_Queue_TimeoutWithDequeue()
         {
             await SyncContext.ClearAsync;
@@ -4012,7 +4014,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_Queue_Close()
         {
             await SyncContext.ClearAsync;
@@ -4026,7 +4028,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_Queue_FromSignal_Single()
         {
             await SyncContext.ClearAsync;
@@ -4046,7 +4048,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_Queue_FromSignal_Multiple()
         {
             await SyncContext.ClearAsync;
@@ -4081,7 +4083,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_Queue_CloseViaSignal()
         {
             await SyncContext.ClearAsync;
@@ -4118,7 +4120,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_Queue_ItemMax()
         {
             await SyncContext.ClearAsync;
@@ -4166,7 +4168,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_Queue_Class()
         {
             await SyncContext.ClearAsync;
@@ -4188,7 +4190,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_Queue_ViaExternalStub_ByExecution()
         {
             await SyncContext.ClearAsync;
@@ -4209,7 +4211,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_Queue_ViaExternalStub_ByIDs()
         {
             await SyncContext.ClearAsync;
@@ -4373,7 +4375,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_StartToCloseTimeout()
         {
             await SyncContext.ClearAsync;
@@ -4394,7 +4396,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Activity_StartToCloseTimeout()
         {
             await SyncContext.ClearAsync;
@@ -4408,7 +4410,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Activity_Heartbeat_Timeout()
         {
             await SyncContext.ClearAsync;
@@ -4422,7 +4424,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Activity_DotNetException()
         {
             await SyncContext.ClearAsync;
@@ -4439,7 +4441,7 @@ namespace TestCadence
         //---------------------------------------------------------------------
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_Container()
         {
             const string taskList = "test-cadence-container";
@@ -4448,7 +4450,7 @@ namespace TestCadence
 
             // Start the [ghcr.io/neonrelease/test-cadence:latest] Docker image locally, having it
             // connect to the local Cadence cluster and then start a bunch of workflows that
-            // will be executed by the container and verify that they completed.
+            // will be executed by the container and then verify that they completed.
 
             // We need a routable IP address for the current machine so we can use it to
             // generate the Cadence URI we'll pass to the [test-cadence] container so it
@@ -4574,7 +4576,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_AmbientState()
         {
             // Verify that the ambient [Workflow.Current] property is being set properly.
@@ -4605,7 +4607,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_Nullable()
         {
             // Verify that nullable workflow arguments and results are serialized properly.
@@ -4655,7 +4657,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_DefaultNullableArg_External()
         {
             var testValue = new DateTime(2020, 10, 21);
@@ -4670,7 +4672,7 @@ namespace TestCadence
         }
 
         [Fact]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonCadence)]
+        [Trait(TestTraits.Project, TestProject.NeonCadence)]
         public async Task Workflow_DefaultNullableArg_Child()
         {
             var testValue = new DateTime(2020, 10, 21);

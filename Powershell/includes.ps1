@@ -40,6 +40,7 @@ $scriptFolder = [System.IO.Path]::GetDirectoryName($scriptPath)
 Push-Location $scriptFolder
 
 . ./error-handling.ps1
+. ./files.ps1
 . ./git.ps1
 . ./deployment.ps1
 . ./github.ps1

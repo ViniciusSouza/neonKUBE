@@ -53,7 +53,7 @@ function Publish
 {
     [CmdletBinding()]
     param (
-        [Parameter(Position=0, Mandatory=1)]
+        [Parameter(Position=0, Mandatory=$true)]
         [string]$Path
     )
 
@@ -134,7 +134,6 @@ if ($other)
 if ($test)
 {
     Publish "$image_root\\test"
-    Publish "$image_root\\test-api"
     Publish "$image_root\\test-cadence"
     Publish "$image_root\\test-temporal"
 }

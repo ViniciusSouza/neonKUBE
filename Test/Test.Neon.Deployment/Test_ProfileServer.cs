@@ -65,10 +65,10 @@ namespace TestDeployment
         /// <param name="server">The assistant erver.</param>
         private void SetDefaultHandlers(ProfileServer server)
         {
-            server.GetProfileValueHandler   = name => ProfileHandlerResult.Create($"{name}-profile");
+            server.GetProfileValueHandler = (request, name) => ProfileHandlerResult.Create($"{name}-profile");
 
             server.GetSecretPasswordHandler = 
-                (name, vault, masterPassword) =>
+                (request, name, vault, masterPassword) =>
                 {
                     var sb = new StringBuilder();
 
@@ -90,7 +90,7 @@ namespace TestDeployment
                 };
 
             server.GetSecretValueHandler =
-                (name, vault, masterPassword) =>
+                (request, name, vault, masterPassword) =>
                 {
                     var sb = new StringBuilder();
 
@@ -114,7 +114,7 @@ namespace TestDeployment
 
         [Theory]
         [Repeat(repeatCount)]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonDeployment)]
+        [Trait(TestTraits.Project, TestProject.NeonDeployment)]
         public void MultipleRequests_Sequential(int repeatCount)
         {
             // Verify that the server is able to handle multiple requests
@@ -142,7 +142,7 @@ namespace TestDeployment
 
         [Theory]
         [Repeat(repeatCount)]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonDeployment)]
+        [Trait(TestTraits.Project, TestProject.NeonDeployment)]
         public async Task MultipleRequests_Parallel(int repeatCount)
         {
             // Verify that the server is able to handle multiple requests
@@ -190,7 +190,7 @@ namespace TestDeployment
 
         [Theory]
         [Repeat(repeatCount)]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonDeployment)]
+        [Trait(TestTraits.Project, TestProject.NeonDeployment)]
         public void GetProfileValue(int repeatCount)
         {
             var client = new ProfileClient(pipeName);
@@ -206,7 +206,7 @@ namespace TestDeployment
 
         [Theory]
         [Repeat(repeatCount)]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonDeployment)]
+        [Trait(TestTraits.Project, TestProject.NeonDeployment)]
         public void GetProfileValue_Exception(int repeatCount)
         {
             var client = new ProfileClient(pipeName);
@@ -215,7 +215,7 @@ namespace TestDeployment
             {
                 SetDefaultHandlers(server);
 
-                server.GetProfileValueHandler = name => throw new Exception("test exception");
+                server.GetProfileValueHandler = (request, name) => throw new Exception("test exception");
 
                 server.Start();
 
@@ -225,7 +225,7 @@ namespace TestDeployment
 
         [Theory]
         [Repeat(repeatCount)]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonDeployment)]
+        [Trait(TestTraits.Project, TestProject.NeonDeployment)]
         public void GetSecretPassword(int repeatCount)
         {
             var client = new ProfileClient(pipeName);
@@ -241,7 +241,7 @@ namespace TestDeployment
 
         [Theory]
         [Repeat(repeatCount)]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonDeployment)]
+        [Trait(TestTraits.Project, TestProject.NeonDeployment)]
         public void GetSecretPassword_UsingMasterPassword(int repeatCount)
         {
             var client = new ProfileClient(pipeName);
@@ -257,7 +257,7 @@ namespace TestDeployment
 
         [Theory]
         [Repeat(repeatCount)]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonDeployment)]
+        [Trait(TestTraits.Project, TestProject.NeonDeployment)]
         public void GetSecretPassword_Exception(int repeatCount)
         {
             var client = new ProfileClient(pipeName);
@@ -266,7 +266,7 @@ namespace TestDeployment
             {
                 SetDefaultHandlers(server);
 
-                server.GetSecretPasswordHandler = (name, value, masterpassword) => throw new Exception("test exception");
+                server.GetSecretPasswordHandler = (request, name, value, masterpassword) => throw new Exception("test exception");
 
                 server.Start();
 
@@ -276,7 +276,7 @@ namespace TestDeployment
 
         [Theory]
         [Repeat(repeatCount)]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonDeployment)]
+        [Trait(TestTraits.Project, TestProject.NeonDeployment)]
         public void GetSecretValue(int repeatCount)
         {
             var client = new ProfileClient(pipeName);
@@ -292,7 +292,7 @@ namespace TestDeployment
 
         [Theory]
         [Repeat(repeatCount)]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonDeployment)]
+        [Trait(TestTraits.Project, TestProject.NeonDeployment)]
         public void GetSecretValue_UsingMasterPassword(int repeatCount)
         {
             var client = new ProfileClient(pipeName);
@@ -308,7 +308,7 @@ namespace TestDeployment
 
         [Theory]
         [Repeat(repeatCount)]
-        [Trait(TestCategory.CategoryTrait, TestCategory.NeonDeployment)]
+        [Trait(TestTraits.Project, TestProject.NeonDeployment)]
         public void GetSecretValue_Exception(int repeatCount)
         {
             var client = new ProfileClient(pipeName);
@@ -317,7 +317,7 @@ namespace TestDeployment
             {
                 SetDefaultHandlers(server);
 
-                server.GetSecretValueHandler = (name, value, masterpassword) => throw new Exception("test exception");
+                server.GetSecretValueHandler = (request, name, value, masterpassword) => throw new Exception("test exception");
 
                 server.Start();
 

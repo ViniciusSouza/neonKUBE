@@ -1,7 +1,7 @@
 #------------------------------------------------------------------------------
 # FILE:         Dockerfile
 # CONTRIBUTOR:  Jeff Lill
-# COPYRIGHT:    Copyright (c) 2005-2020 by neonFORGE LLC.  All rights reserved.
+# COPYRIGHT:    Copyright (c) 2005-2021 by neonFORGE LLC.  All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -29,6 +29,15 @@ FROM        alpine:latest
 MAINTAINER  jeff@lilltek.com
 STOPSIGNAL  SIGTERM
 
+# Environment
+
+ENV TZ=UTC
+
+# Configure
+
 COPY docker-entrypoint.sh   /
-RUN chmod 777 /docker-entrypoint.sh
+
+RUN chmod 700 /*.sh \
+    && ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
 ENTRYPOINT ["/docker-entrypoint.sh"]
