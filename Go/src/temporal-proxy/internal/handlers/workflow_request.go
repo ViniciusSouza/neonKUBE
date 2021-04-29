@@ -832,7 +832,7 @@ func handleWorkflowSleepRequest(requestCtx context.Context, request *messages.Wo
 	// wait for the future to be unblocked
 	err := future.Get(ctx, &result)
 	if err != nil {
-		reply.Build(internal.NewTemporalError(err, internal.CancelledError))
+		reply.Build(internal.NewTemporalError(err, internal.CanceledError))
 		return reply
 	}
 
@@ -934,7 +934,7 @@ func handleWorkflowWaitForChildRequest(requestCtx context.Context, request *mess
 	if err := cctx.GetFuture().Get(ctx, &result); err != nil {
 		var temporalError *internal.TemporalError
 		if isCanceledErr(err) {
-			temporalError = internal.NewTemporalError(err, internal.CancelledError)
+			temporalError = internal.NewTemporalError(err, internal.CanceledError)
 		} else {
 			temporalError = internal.NewTemporalError(err)
 		}
@@ -1400,7 +1400,7 @@ func handleWorkflowQueueReadRequest(requestCtx context.Context, request *message
 			isReady := false
 			err := f.Get(ctx, &isReady)
 			if err != nil {
-				temporalError = internal.NewTemporalError(err, internal.CancelledError)
+				temporalError = internal.NewTemporalError(err, internal.CanceledError)
 			} else {
 				temporalError = internal.NewTemporalError(fmt.Errorf("Timeout reading from workflow queue: %d", queueID), internal.TimeoutError)
 			}
