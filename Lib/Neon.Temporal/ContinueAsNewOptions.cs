@@ -36,32 +36,25 @@ namespace Neon.Temporal
     public class ContinueAsNewOptions
     {
         /// <summary>
-        /// Optionally overrides the current workflow's timeout for the restarted
+        /// Optionally overrides the current workflow's execution timeout for the restarted
         /// workflow when this value is greater than <see cref="TimeSpan.Zero"/>.
         /// </summary>
         [JsonConverter(typeof(GoTimeSpanJsonConverter))]
-        public TimeSpan ExecutionStartToCloseTimeout { get; set; }
+        public TimeSpan WorkflowExecutionTimeout { get; set; }
+
+        /// <summary>
+        /// Optionally overrides the current workflow's run timeout for the restarted
+        /// workflow when this value is greater than <see cref="TimeSpan.Zero"/>.
+        /// </summary>
+        [JsonConverter(typeof(GoTimeSpanJsonConverter))]
+        public TimeSpan WorkflowRunTimeout { get; set; }
 
         /// <summary>
         /// Optionally overrides the current workflow's timeout for the restarted
         /// workflow when this value is greater than <see cref="TimeSpan.Zero"/>.
         /// </summary>
         [JsonConverter(typeof(GoTimeSpanJsonConverter))]
-        public TimeSpan ScheduleToCloseTimeout { get; set; }
-
-        /// <summary>
-        /// Optionally overrides the current workflow's timeout for the restarted
-        /// workflow when this value is greater than <see cref="TimeSpan.Zero"/>.
-        /// </summary>
-        [JsonConverter(typeof(GoTimeSpanJsonConverter))]
-        public TimeSpan ScheduleToStartTimeout { get; set; }
-
-        /// <summary>
-        /// Optionally overrides the current workflow's decision task timeout for 
-        /// the restarted workflow when this value is greater than <see cref="TimeSpan.Zero"/>.
-        /// </summary>
-        [JsonConverter(typeof(GoTimeSpanJsonConverter))]
-        public TimeSpan TaskStartToCloseTimeout { get; set; }
+        public TimeSpan WorkflowTaskTimeout { get; set; }
 
         /// <summary>
         /// Optionally overrides the name of the workflow to continue as new.
@@ -69,8 +62,14 @@ namespace Neon.Temporal
         public string Workflow { get; set; }
 
         /// <summary>
+        /// Optionally overrides the current workflow's Id when restarting.
+        /// </summary>
+        public string WorkflowId { get; set; }
+
+        /// <summary>
         /// Optionally overrides the current workflow's task queue when restarting.
         /// </summary>
+        [JsonProperty(PropertyName = "TaskQueueName")]
         public string TaskQueue { get; set; }
 
         /// <summary>
@@ -82,5 +81,20 @@ namespace Neon.Temporal
         /// Optionally overrides the current workflow's retry options when restarting.
         /// </summary>
         public RetryPolicy RetryPolicy { get; set; }
+
+        /// <summary>
+        /// Optionally overrides the current workflow's wait for cancellation property when restarting.
+        /// </summary>
+        public bool WaitForCancellation { get; set; }
+
+        /// <summary>
+        /// Optionally overrides the current workflow's cron schedule when restarting.
+        /// </summary>
+        public string CronSchedule { get; set; }
+
+        /// <summary>
+        /// Optionally overrides the current workflow's id reuse policy when restarting
+        /// </summary>
+        public WorkflowIdReusePolicy WorkflowIdReusePolicy { get; set; }
     }
 }

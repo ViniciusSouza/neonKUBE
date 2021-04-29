@@ -1,5 +1,5 @@
 ﻿//-----------------------------------------------------------------------------
-// FILE:	    ContinueAsNewException.cs
+// FILE:	    CanceledException.cs
 // CONTRIBUTOR: Jack Burns
 // COPYRIGHT:	Copyright (c) 2005-2021 by neonFORGE LLC.  All rights reserved.
 //
@@ -19,16 +19,21 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Neon.Temporal.Internal
+namespace Neon.Temporal.Exceptions
 {
     /// <summary>
-    /// Contains information about how to continue the workflow as new.
+    /// Thrown to cancel a running workflow or activity.
     /// </summary>
-    public class ContinueAsNewException : TemporalException
+    public class CanceledException : Exception
     {
         /// <summary>
-        /// <inheritdoc/>
+        /// Constructor.
         /// </summary>
-        internal override TemporalErrorType TemporalErrorType => throw new NotImplementedException();
+        /// <param name="message">Optionally specifies a message.</param>
+        /// <param name="innerException">Optionally specifies the inner exception.</param>
+        public CanceledException(string message = null, Exception innerException = null)
+            :base(message, innerException)
+        {
+        }
     }
 }

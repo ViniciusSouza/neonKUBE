@@ -430,7 +430,7 @@ namespace Neon.Temporal.Internal
         /// Ensures that the type passed is a valid workflow implementation.
         /// </summary>
         /// <param name="workflowType">The type being tested.</param>
-        /// <exception cref="WorkflowException">Thrown when the interface is not valid.</exception>
+        /// <exception cref="WorkflowExecutionException">Thrown when the interface is not valid.</exception>
         internal static void ValidateWorkflowImplementation(Type workflowType)
         {
             Covenant.Requires<ArgumentNullException>(workflowType != null, nameof(workflowType));

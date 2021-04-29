@@ -124,11 +124,11 @@ namespace TestTemporal
 
             var worker = await client.NewWorkerAsync();
 
-            await Assert.ThrowsAsync<WorkflowException>(async () => await worker.RegisterWorkflowAsync<SyncSignalString>());
+            await Assert.ThrowsAsync<WorkflowExecutionException>(async () => await worker.RegisterWorkflowAsync<SyncSignalString>());
 
             // Verify that we're not allowd to create a workflow stub either.
 
-            Assert.Throws<WorkflowException>(() => client.NewWorkflowStub<SyncSignalString>());
+            Assert.Throws<WorkflowExecutionException>(() => client.NewWorkflowStub<SyncSignalString>());
         }
 
         //---------------------------------------------------------------------
@@ -165,11 +165,11 @@ namespace TestTemporal
 
             var worker = await client.NewWorkerAsync();
 
-            await Assert.ThrowsAsync<WorkflowException>(async () => await worker.RegisterWorkflowAsync<SyncSignalVoid>());
+            await Assert.ThrowsAsync<WorkflowExecutionException>(async () => await worker.RegisterWorkflowAsync<SyncSignalVoid>());
 
             // Verify that we're not allowd to create a workflow stub either.
 
-            Assert.Throws<WorkflowException>(() => client.NewWorkflowStub<SyncSignalVoid>());
+            Assert.Throws<WorkflowExecutionException>(() => client.NewWorkflowStub<SyncSignalVoid>());
         }
 
         //---------------------------------------------------------------------
@@ -207,11 +207,11 @@ namespace TestTemporal
 
             var worker = await client.NewWorkerAsync();
 
-            await Assert.ThrowsAsync<WorkflowException>(async () => await worker.RegisterWorkflowAsync<AsyncSignalString>());
+            await Assert.ThrowsAsync<WorkflowExecutionException>(async () => await worker.RegisterWorkflowAsync<AsyncSignalString>());
 
             // Verify that we're not allowd to create a workflow stub either.
 
-            Assert.Throws<WorkflowException>(() => client.NewWorkflowStub<AsyncSignalString>());
+            Assert.Throws<WorkflowExecutionException>(() => client.NewWorkflowStub<AsyncSignalString>());
         }
 
         //---------------------------------------------------------------------
@@ -248,11 +248,11 @@ namespace TestTemporal
 
             var worker = await client.NewWorkerAsync();
 
-            await Assert.ThrowsAsync<WorkflowException>(async () => await worker.RegisterWorkflowAsync<AsyncSignalVoid>());
+            await Assert.ThrowsAsync<WorkflowExecutionException>(async () => await worker.RegisterWorkflowAsync<AsyncSignalVoid>());
 
             // Verify that we're not allowd to create a workflow stub either.
 
-            Assert.Throws<WorkflowException>(() => client.NewWorkflowStub<AsyncSignalVoid>());
+            Assert.Throws<WorkflowExecutionException>(() => client.NewWorkflowStub<AsyncSignalVoid>());
         }
     }
 }

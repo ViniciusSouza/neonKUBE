@@ -473,9 +473,9 @@ namespace Neon.Temporal
                 @namespace:                 options.Namespace ?? WorkflowInfo.Namespace,
                 taskQueue:                  options.TaskQueue ?? WorkflowInfo.TaskQueue,
                 workflow:                   options.Workflow ?? WorkflowInfo.WorkflowType,
-                startToCloseTimeout:        options.ExecutionStartToCloseTimeout,
-                scheduleToCloseTimeout:     options.ScheduleToCloseTimeout,
-                scheduleToStartTimeout:     options.ScheduleToStartTimeout,
+                startToCloseTimeout:        options.WorkflowExecutionTimeout,
+                scheduleToCloseTimeout:     options.WorkflowRunTimeout,
+                scheduleToStartTimeout:     options.WorkflowTaskTimeout,
                 decisionTaskTimeout:        options.TaskStartToCloseTimeout,
                 retryPolicy:                options.RetryPolicy);
         }

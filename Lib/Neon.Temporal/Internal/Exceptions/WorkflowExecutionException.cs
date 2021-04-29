@@ -1,5 +1,5 @@
 ﻿//-----------------------------------------------------------------------------
-// FILE:	    WorkflowTypeException.cs
+// FILE:	    WorkflowExecutionException.cs
 // CONTRIBUTOR: John Burns
 // COPYRIGHT:	Copyright (c) 2005-2021 by neonFORGE LLC.  All rights reserved.
 //
@@ -22,12 +22,12 @@ namespace Neon.Temporal.Internal
     /// <summary>
     /// Thrown when ak workflow interface or implementation is not valid.
     /// </summary>
-    public class WorkflowException : TemporalException
+    public class WorkflowExecutionException : TemporalException
     {
         /// <summary>
         /// Default constructor.
         /// </summary>
-        public WorkflowException()
+        public WorkflowExecutionException()
         {
         }
 
@@ -39,7 +39,7 @@ namespace Neon.Temporal.Internal
         /// <param name="cause">The cause of the exception.</param>
         /// <param name="message">Optionally specifies a message.</param>
         /// <param name="innerException">Optionally specifies the inner exception.</param>
-        public WorkflowException(
+        public WorkflowExecutionException(
             WorkflowExecution execution,
             WorkflowType      workflowType,
             string            cause,

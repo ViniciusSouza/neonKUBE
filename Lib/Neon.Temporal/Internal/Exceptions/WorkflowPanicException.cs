@@ -25,7 +25,7 @@ namespace Neon.Temporal.Internal
     /// Exception that contains information about panicked workflow.
 	/// Used to distinguish go panic in the workflow code from a PanicError returned from a workflow function.
     /// </summary>
-    public class WorkflowPanicException : TemporalFailure
+    public class WorkflowPanicException : PanicException
     {
         /// <summary>
         /// Constructor.
@@ -41,25 +41,13 @@ namespace Neon.Temporal.Internal
             Failure   failure,
             string    message        = null,
             Exception innerException = null)
-            : base(failure, message, innerException)
+            : base(
+                  value,
+                  stackTrace,
+                  failure, 
+                  message, 
+                  innerException)
         {
-            StackTrace = stackTrace;
-            Value      = value;
         }
-
-        /// <summary>
-        /// The string value of the panic as json.
-        /// </summary>
-        public string Value { get; set; }
-
-        /// <summary>
-        /// The stack trace of the panic.
-        /// </summary>
-        public new string StackTrace { get; set; }
-
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        internal override TemporalErrorType TemporalErrorType => TemporalErrorType.Panic;
     }
 }
