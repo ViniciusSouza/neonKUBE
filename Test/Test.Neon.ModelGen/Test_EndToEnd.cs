@@ -15,6 +15,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#if !NETFRAMEWORK   // These test don't work support .NET Framework
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -674,3 +676,5 @@ namespace TestModelGen.AspNet
         }
     }
 }
+
+#endif  // !NETFRAMEWORK

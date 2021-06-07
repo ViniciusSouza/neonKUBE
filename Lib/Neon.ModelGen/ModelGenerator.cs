@@ -58,6 +58,17 @@ namespace Neon.ModelGen
         private static MetadataReference    cachedNetStandard;
         private static Regex                routeConstraintRegex = new Regex(@"\{[^:\}]*:[^:\}]*\}");   // Matches route template parameters with constraints (like: "{param:int}").
         private static Regex                routeParameterRegex  = new Regex(@"\{([^\}]*)\}");          // Matches route template parameters (like: "{param}") capturing just the parameter name.
+        private static Type                 runtime;
+
+        /// <summary>
+        /// Static constructor.
+        /// </summary>
+        static ModelGenerator()
+        {
+            // Ensure that [System.Runtime.dll] will be included. 
+
+            runtime = typeof(Attribute);
+        }
 
         /// <summary>
         /// Compiles C# source code into an assembly.
@@ -119,7 +130,7 @@ namespace Neon.ModelGen
             // We've set [PreserveCompilationContext=true] in [Neon.ModelGen.csproj]
             // so that the reference assemblies will be written to places like:
             //
-            //      bin/Debug/netstandard2.1/refs/*
+            //      bin/Debug/netstandard2.0/refs/*
             //
             // This is where we obtained the these assemblies and added them
             // all as resources within the [Netstandard] project folder.

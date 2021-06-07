@@ -15,6 +15,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#if !NETFRAMEWORK   // These test don't support .NET Framework
+
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -625,3 +627,5 @@ namespace TestModelGen.UxAspNet
         }
     }
 }
+
+#endif  // !NETFRAMEWORK

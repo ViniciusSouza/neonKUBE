@@ -63,7 +63,9 @@ namespace TestModelGen
         /// <param name="defaultNamespace">The default namespace to be used for instanting types.</param>
         /// <param name="assemblyStream">The stream holding the assembly to be loaded.</param>
         public AssemblyContext(string defaultNamespace, Stream assemblyStream)
+#if !NETFRAMEWORK
             : base(isCollectible: true)
+#endif
         {
             Covenant.Requires<ArgumentNullException>(!string.IsNullOrEmpty(defaultNamespace), nameof(defaultNamespace));
             Covenant.Requires<ArgumentNullException>(assemblyStream != null, nameof(assemblyStream));
@@ -95,7 +97,9 @@ namespace TestModelGen
             {
                 Current = null;
                 isDisposed = true;
+#if !NETFRAMEWORK
                 Unload();
+#endif
             }
         }
 
